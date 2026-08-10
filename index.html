@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modo Foco - Tarefas</title>
+    <style>
+        :root {
+            --primary: #0078D4; /* Microsoft Blue */
+            --primary-hover: #106EBE;
+            --bg-color: #F3F2F1;
+            --surface: #FFFFFF;
+            --text-main: #201F1E;
+            --text-muted: #605E5C;
+            --border: #EDEBE9;
+            --radius: 8px;
+            --shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: var(--surface);
+            width: 100%;
+            max-width: 600px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 40px 30px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .screen {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.4s ease, transform 0.4s ease;
+            transform: translateY(10px);
+        }
+
+        .screen.active {
+            display: flex;
+            flex-direction: column;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Screen 1: Add Tasks */
+        .title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--primary);
+            text-align: center;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: 24px;
+            text-align: center;
+            line-height: 1.5;
+        }
+
+        textarea {
+            width: 100%;
+            height: 150px;
+            padding: 16px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            font-size: 16px;
+            resize: none;
+            margin-bottom: 24px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            line-height: 1.5;
+            color: var(--text-main);
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(0, 120, 212, 0.2);
+        }
+
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: var(--radius);
+            padding: 16px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        /* Screen 2: Focus Mode */
+        .progress-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 40px;
+            width: 100%;
+        }
+
+        .progress-text {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .progress-bar-bg {
+            width: 100%;
+            height: 6px;
+            background-color: var(--border);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background-color: var(--primary);
+            width: 0%;
+            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .task-display {
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 140px;
+            margin-bottom: 40px;
+            text-align: center;
+            padding: 0 20px;
+        }
+
+        .task-text {
+            font-size: 32px;
+            font-weight: 600;
+            line-height: 1.4;
+            color: var(--text-main);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        .btn-complete {
+            background-color: #107C41; /* Microsoft Green */
+        }
+        
+        .btn-complete:hover {
+            background-color: #0B5A2F;
+        }
+
+        /* Screen 3: Done Screen */
+        .done-content {
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        .trophy {
+            font-size: 64px;
+            margin-bottom: 20px;
+            animation: bounce 2s infinite ease-in-out;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .container {
+                padding: 30px 20px;
+            }
+            .task-text {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        
+        <!-- Tela 1: Adicionar Tarefas -->
+        <div id="screen-add" class="screen active">
+            <h1 class="title">Modo Foco</h1>
+            <p class="subtitle">Adicione suas tarefas (uma por linha) e concentre-se em uma de cada vez, sem distrações.</p>
+            <textarea id="task-input" placeholder="Comprar pão&#10;Ligar para o médico&#10;Responder emails"></textarea>
+            <button id="btn-start" class="btn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                Iniciar Foco
+            </button>
+        </div>
+
+        <!-- Tela 2: Modo Foco -->
+        <div id="screen-focus" class="screen">
+            <div class="progress-container">
+                <span class="progress-text" id="progress-text">Tarefa 1 de 5</span>
+                <div class="progress-bar-bg">
+                    <div class="progress-bar-fill" id="progress-bar"></div>
+                </div>
+            </div>
+            
+            <div class="task-display">
+                <h2 class="task-text" id="current-task"></h2>
+            </div>
+
+            <button id="btn-complete" class="btn btn-complete">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                Concluir Tarefa
+            </button>
+        </div>
+
+        <!-- Tela 3: Finalização -->
+        <div id="screen-done" class="screen">
+            <div class="done-content">
+                <div class="trophy">🎉</div>
+                <h1 class="title">Parabéns!</h1>
+                <p class="subtitle" id="done-message">Você concluiu todas as tarefas!</p>
+                <button id="btn-restart" class="btn">Criar Nova Lista</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Elementos do DOM
+        const screenAdd = document.getElementById('screen-add');
+        const screenFocus = document.getElementById('screen-focus');
+        const screenDone = document.getElementById('screen-done');
+        
+        const taskInput = document.getElementById('task-input');
+        const btnStart = document.getElementById('btn-start');
+        
+        const currentTaskEl = document.getElementById('current-task');
+        const progressText = document.getElementById('progress-text');
+        const progressBar = document.getElementById('progress-bar');
+        const btnComplete = document.getElementById('btn-complete');
+        
+        const doneMessage = document.getElementById('done-message');
+        const btnRestart = document.getElementById('btn-restart');
+
+        // Estado do App
+        let tasks = [];
+        let currentIndex = 0;
+
+        // Inicializar lendo do LocalStorage
+        function init() {
+            const savedData = localStorage.getItem('focusAppState');
+            if (savedData) {
+                try {
+                    const state = JSON.parse(savedData);
+                    if (state.tasks && state.tasks.length > 0 && state.currentIndex < state.tasks.length) {
+                        tasks = state.tasks;
+                        currentIndex = state.currentIndex;
+                        showScreen(screenFocus);
+                        
+                        // Restaura o progresso
+                        const total = tasks.length;
+                        const current = currentIndex + 1;
+                        const percentage = ((current - 1) / total) * 100;
+                        progressBar.style.width = `${percentage}%`;
+                        
+                        updateFocusView(false); // sem animação inicial forte
+                        return;
+                    }
+                } catch (e) {
+                    console.error("Erro ao ler LocalStorage", e);
+                }
+            }
+            // Padrão: tela de adição
+            showScreen(screenAdd);
+        }
+
+        function saveState() {
+            localStorage.setItem('focusAppState', JSON.stringify({
+                tasks: tasks,
+                currentIndex: currentIndex
+            }));
+        }
+
+        function clearState() {
+            localStorage.removeItem('focusAppState');
+        }
+
+        function showScreen(screenEl) {
+            document.querySelectorAll('.screen').forEach(s => {
+                s.style.display = 'none';
+                s.classList.remove('active');
+            });
+            
+            screenEl.style.display = 'flex';
+            // Pequeno delay para permitir a transição do display:flex
+            setTimeout(() => {
+                screenEl.classList.add('active');
+            }, 10);
+        }
+
+        function updateFocusView(animate = true) {
+            const total = tasks.length;
+            const current = currentIndex + 1;
+            
+            if (animate) {
+                // Animação de saída
+                currentTaskEl.style.opacity = 0;
+                currentTaskEl.style.transform = 'translateY(10px)';
+                
+                setTimeout(() => {
+                    // Atualiza o conteúdo
+                    currentTaskEl.textContent = tasks[currentIndex];
+                    progressText.textContent = `Tarefa ${current} de ${total}`;
+                    
+                    const percentage = ((current - 1) / total) * 100;
+                    progressBar.style.width = `${percentage}%`;
+
+                    // Animação de entrada
+                    currentTaskEl.style.opacity = 1;
+                    currentTaskEl.style.transform = 'translateY(0)';
+                }, 300);
+            } else {
+                currentTaskEl.textContent = tasks[currentIndex];
+                progressText.textContent = `Tarefa ${current} de ${total}`;
+                currentTaskEl.style.opacity = 1;
+                currentTaskEl.style.transform = 'translateY(0)';
+            }
+        }
+
+        // Event Listeners
+        btnStart.addEventListener('click', () => {
+            const lines = taskInput.value.split('\n');
+            tasks = lines.map(t => t.trim()).filter(t => t.length > 0);
+            
+            if (tasks.length === 0) {
+                alert('Por favor, adicione pelo menos uma tarefa para iniciar o Modo Foco.');
+                return;
+            }
+
+            currentIndex = 0;
+            saveState();
+            showScreen(screenFocus);
+            
+            // Inicializa a barra de progresso zerada e depois anima para a primeira tarefa
+            progressBar.style.width = '0%';
+            updateFocusView(false); // Define o texto logo
+            currentTaskEl.style.opacity = 0;
+            currentTaskEl.style.transform = 'translateY(10px)';
+            
+            setTimeout(() => {
+                currentTaskEl.style.opacity = 1;
+                currentTaskEl.style.transform = 'translateY(0)';
+            }, 100);
+        });
+
+        btnComplete.addEventListener('click', () => {
+            currentIndex++;
+            saveState();
+            
+            const total = tasks.length;
+            
+            if (currentIndex < total) {
+                updateFocusView();
+            } else {
+                // Completou tudo
+                progressBar.style.width = '100%';
+                
+                // Animação de saída da última tarefa antes de ir para a tela final
+                currentTaskEl.style.opacity = 0;
+                currentTaskEl.style.transform = 'translateY(-10px)';
+                
+                setTimeout(() => {
+                    doneMessage.textContent = `Você concluiu todas as ${tasks.length} tarefas!`;
+                    clearState();
+                    showScreen(screenDone);
+                }, 400);
+            }
+        });
+
+        btnRestart.addEventListener('click', () => {
+            tasks = [];
+            currentIndex = 0;
+            taskInput.value = '';
+            showScreen(screenAdd);
+        });
+
+        // Inicia o app
+        init();
+    </script>
+</body>
+</html>
