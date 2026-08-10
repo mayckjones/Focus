@@ -121,6 +121,22 @@
             transform: scale(0.98);
         }
 
+        .button-group {
+            display: flex;
+            gap: 12px;
+            width: 100%;
+        }
+
+        .btn-secondary {
+            background-color: var(--surface);
+            color: var(--text-main);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--bg-color);
+        }
+
         /* Screen 2: Focus Mode */
         .progress-container {
             display: flex;
@@ -216,10 +232,16 @@
             <h1 class="title">Modo Foco</h1>
             <p class="subtitle">Adicione suas tarefas (uma por linha) e concentre-se em uma de cada vez, sem distrações.</p>
             <textarea id="task-input" placeholder="Comprar pão&#10;Ligar para o médico&#10;Responder emails"></textarea>
-            <button id="btn-start" class="btn">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                Iniciar Foco
-            </button>
+            <div class="button-group">
+                <button id="btn-shuffle" class="btn btn-secondary" title="Embaralhar ordem das tarefas">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
+                    Embaralhar
+                </button>
+                <button id="btn-start" class="btn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                    Iniciar Foco
+                </button>
+            </div>
         </div>
 
         <!-- Tela 2: Modo Foco -->
@@ -235,10 +257,16 @@
                 <h2 class="task-text" id="current-task"></h2>
             </div>
 
-            <button id="btn-complete" class="btn btn-complete">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                Concluir Tarefa
-            </button>
+            <div class="button-group">
+                <button id="btn-skip" class="btn btn-secondary" title="Pular para o final da lista">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                    Pular
+                </button>
+                <button id="btn-complete" class="btn btn-complete">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    Concluir Tarefa
+                </button>
+            </div>
         </div>
 
         <!-- Tela 3: Finalização -->
@@ -261,11 +289,13 @@
         
         const taskInput = document.getElementById('task-input');
         const btnStart = document.getElementById('btn-start');
+        const btnShuffle = document.getElementById('btn-shuffle');
         
         const currentTaskEl = document.getElementById('current-task');
         const progressText = document.getElementById('progress-text');
         const progressBar = document.getElementById('progress-bar');
         const btnComplete = document.getElementById('btn-complete');
+        const btnSkip = document.getElementById('btn-skip');
         
         const doneMessage = document.getElementById('done-message');
         const btnRestart = document.getElementById('btn-restart');
@@ -356,6 +386,17 @@
         }
 
         // Event Listeners
+        btnShuffle.addEventListener('click', () => {
+            const lines = taskInput.value.split('\n').map(t => t.trim()).filter(t => t.length > 0);
+            if (lines.length > 0) {
+                for (let i = lines.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [lines[i], lines[j]] = [lines[j], lines[i]];
+                }
+                taskInput.value = lines.join('\n');
+            }
+        });
+
         btnStart.addEventListener('click', () => {
             const lines = taskInput.value.split('\n');
             tasks = lines.map(t => t.trim()).filter(t => t.length > 0);
@@ -402,6 +443,18 @@
                     clearState();
                     showScreen(screenDone);
                 }, 400);
+            }
+        });
+
+        btnSkip.addEventListener('click', () => {
+            // Só pula se não for a última tarefa da lista
+            if (currentIndex < tasks.length - 1) {
+                // Remove a tarefa atual e coloca no final da lista
+                const skippedTask = tasks.splice(currentIndex, 1)[0];
+                tasks.push(skippedTask);
+                
+                saveState();
+                updateFocusView();
             }
         });
 
