@@ -40,7 +40,6 @@
             --primary-light: rgba(0,120,212,0.08);
             --primary-glow: rgba(0,120,212,0.2);
 
-            /* Block Colors */
             --block-urgent: #E74C3C;
             --block-urgent-bg: rgba(231,76,60,0.08);
             --block-urgent-border: rgba(231,76,60,0.25);
@@ -53,6 +52,24 @@
             --block-quick: #8E44AD;
             --block-quick-bg: rgba(142,68,173,0.08);
             --block-quick-border: rgba(142,68,173,0.25);
+            --block-blue: #3498DB;
+            --block-blue-bg: rgba(52,152,219,0.08);
+            --block-blue-border: rgba(52,152,219,0.25);
+            --block-teal: #1ABC9C;
+            --block-teal-bg: rgba(26,188,156,0.08);
+            --block-teal-border: rgba(26,188,156,0.25);
+            --block-pink: #FD79A8;
+            --block-pink-bg: rgba(253,121,168,0.08);
+            --block-pink-border: rgba(253,121,168,0.25);
+            --block-gray: #95A5A6;
+            --block-gray-bg: rgba(149,165,166,0.08);
+            --block-gray-border: rgba(149,165,166,0.25);
+            --block-yellow: #F1C40F;
+            --block-yellow-bg: rgba(241,196,15,0.08);
+            --block-yellow-border: rgba(241,196,15,0.25);
+            --block-indigo: #6C5CE7;
+            --block-indigo-bg: rgba(108,92,231,0.08);
+            --block-indigo-border: rgba(108,92,231,0.25);
 
             /* Day Chips */
             --day-seg: #3498DB;
@@ -106,6 +123,18 @@
             --block-canwait-border: rgba(39,174,96,0.3);
             --block-quick-bg: rgba(142,68,173,0.12);
             --block-quick-border: rgba(142,68,173,0.3);
+            --block-blue-bg: rgba(52,152,219,0.12);
+            --block-blue-border: rgba(52,152,219,0.3);
+            --block-teal-bg: rgba(26,188,156,0.12);
+            --block-teal-border: rgba(26,188,156,0.3);
+            --block-pink-bg: rgba(253,121,168,0.12);
+            --block-pink-border: rgba(253,121,168,0.3);
+            --block-gray-bg: rgba(149,165,166,0.12);
+            --block-gray-border: rgba(149,165,166,0.3);
+            --block-yellow-bg: rgba(241,196,15,0.12);
+            --block-yellow-border: rgba(241,196,15,0.3);
+            --block-indigo-bg: rgba(108,92,231,0.12);
+            --block-indigo-border: rgba(108,92,231,0.3);
 
             --glass-bg: rgba(30,33,48,0.75);
             --glass-border: rgba(45,51,72,0.5);
@@ -138,6 +167,18 @@
                 --block-canwait-border: rgba(39,174,96,0.3);
                 --block-quick-bg: rgba(142,68,173,0.12);
                 --block-quick-border: rgba(142,68,173,0.3);
+                --block-blue-bg: rgba(52,152,219,0.12);
+                --block-blue-border: rgba(52,152,219,0.3);
+                --block-teal-bg: rgba(26,188,156,0.12);
+                --block-teal-border: rgba(26,188,156,0.3);
+                --block-pink-bg: rgba(253,121,168,0.12);
+                --block-pink-border: rgba(253,121,168,0.3);
+                --block-gray-bg: rgba(149,165,166,0.12);
+                --block-gray-border: rgba(149,165,166,0.3);
+                --block-yellow-bg: rgba(241,196,15,0.12);
+                --block-yellow-border: rgba(241,196,15,0.3);
+                --block-indigo-bg: rgba(108,92,231,0.12);
+                --block-indigo-border: rgba(108,92,231,0.3);
                 --glass-bg: rgba(30,33,48,0.75);
                 --glass-border: rgba(45,51,72,0.5);
                 --completed-bg: rgba(39,174,96,0.1);
@@ -437,7 +478,7 @@
             box-shadow: var(--shadow-md);
             padding: 8px;
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(5, 1fr);
             gap: 8px;
             z-index: 50;
         }
@@ -1960,7 +2001,7 @@
             { id: genId(), title: 'Tarefas rápidas', colorVar: 'quick',    tasks: [] },
         ];
 
-        const BLOCK_COLORS = ['urgent', 'important', 'canwait', 'quick'];
+        const BLOCK_COLORS = ['urgent', 'important', 'canwait', 'quick', 'blue', 'teal', 'pink', 'gray', 'yellow', 'indigo'];
         let nextColorIndex = 0;
 
         let state = {
@@ -3513,6 +3554,19 @@
             // Update nextColorIndex based on existing blocks
             if (state.blocks.length > 0) {
                 nextColorIndex = state.blocks.length;
+            }
+
+            // Bind Search Input
+            const searchInput = document.getElementById('search-input');
+            if (searchInput) {
+                searchInput.value = state.searchQuery || '';
+                searchInput.addEventListener('input', (e) => {
+                    state.searchQuery = e.target.value;
+                    renderAll();
+                    // Retain focus correctly
+                    const el = document.getElementById('search-input');
+                    if (el) el.focus();
+                });
             }
 
             renderAll();
