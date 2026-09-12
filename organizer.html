@@ -922,6 +922,7 @@
             font-weight: 500;
             color: var(--text);
             word-break: break-word;
+            white-space: pre-wrap;
             line-height: 1.4;
         }
 
@@ -936,6 +937,9 @@
             padding: 2px 6px;
             background: var(--surface);
             outline: none;
+            resize: none;
+            overflow: hidden;
+            line-height: 1.4;
             box-shadow: 0 0 0 2px var(--primary-glow);
         }
 
@@ -1660,6 +1664,8 @@
             color: var(--text);
             line-height: 1.4;
             word-break: break-word;
+            white-space: pre-wrap;
+            cursor: text;
         }
 
         .subtask-item.completed .subtask-text {
@@ -2359,13 +2365,21 @@
         }
 
         function startEditTask(task, textEl, card) {
-            const input = document.createElement('input');
-            input.type = 'text';
+            const input = document.createElement('textarea');
             input.className = 'task-text-input';
             input.value = task.text;
+            input.rows = 1;
+            
+            const adjustHeight = () => {
+                input.style.height = 'auto';
+                input.style.height = input.scrollHeight + 'px';
+            };
+            input.addEventListener('input', adjustHeight);
+
             textEl.replaceWith(input);
             input.focus();
-            input.select();
+            input.setSelectionRange(input.value.length, input.value.length);
+            adjustHeight();
 
             const finish = () => {
                 const val = input.value.trim();
@@ -2378,7 +2392,7 @@
 
             input.addEventListener('blur', finish);
             input.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); input.blur(); }
                 if (e.key === 'Escape') { input.value = task.text; input.blur(); }
             });
         }
@@ -3626,9 +3640,64 @@
                 const textEl = document.createElement('div');
                 textEl.className = 'subtask-text';
                 textEl.textContent = subtask.text;
+                textEl.title = 'Clique para editar';
+                
+                textEl.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const input = document.createElement('textarea');
+                    input.className = 'task-text-input';
+                    input.value = subtask.text;
+                    input.rows = 1;
+                    
+                    const adjustHeight = () => {
+                        input.style.height = 'auto';
+                        input.style.height = input.scrollHeight + 'px';
+                    };
+                    input.addEventListener('input', adjustHeight);
+
+                    textEl.replaceWith(input);
+                    input.focus();
+                    input.setSelectionRange(input.value.length, input.value.length);
+                    adjustHeight();
+
+                    const finish = () => {
+                        const val = input.value.trim();
+                        if (val) {
+                            subtask.text = val;
+                            saveState();
+                        }
+                        renderSubtasks();
+                        renderAll();
+                    };
+
+                    input.addEventListener('blur', finish);
+                    input.addEventListener('keydown', (ev) => {
+                        if (ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); input.blur(); }
+                        if (ev.key === 'Escape') { input.value = subtask.text; input.blur(); }
+                    });
+                });
+
+                const actions = document.createElement('div');
+                actions.style.display = 'flex';
+                actions.style.gap = '4px';
+
+                const promoteBtn = document.createElement('button');
+                promoteBtn.className = 'subtask-delete';
+                promoteBtn.title = 'Promover a tarefa';
+                promoteBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="9 18 15 12 9 6"></polyline></svg>';
+                promoteBtn.addEventListener('click', () => {
+                    currentEditingTask.subtasks.splice(index, 1);
+                    const newTask = createTask(subtask.text);
+                    newTask.completed = subtask.completed;
+                    state.inbox.unshift(newTask);
+                    saveState();
+                    renderSubtasks();
+                    renderAll();
+                });
 
                 const delBtn = document.createElement('button');
                 delBtn.className = 'subtask-delete';
+                delBtn.title = 'Excluir';
                 delBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>';
                 
                 delBtn.addEventListener('click', () => {
@@ -3637,9 +3706,12 @@
                     renderSubtasks();
                 });
 
+                actions.appendChild(promoteBtn);
+                actions.appendChild(delBtn);
+
                 item.appendChild(checkbox);
                 item.appendChild(textEl);
-                item.appendChild(delBtn);
+                item.appendChild(actions);
                 subtaskListEl.appendChild(item);
             });
         }
