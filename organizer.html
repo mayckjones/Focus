@@ -1,0 +1,2873 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Focus — Organizador</title>
+    <meta name="description" content="Organize suas tarefas por blocos de prioridade e foque no que importa.">
+    <link rel="icon" type="image/png" href="Logo/Documento2.png">
+    <link rel="apple-touch-icon" href="Logo/Documento2.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Focus Organizer">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <style>
+        /* ========== CSS VARIABLES ========== */
+        :root {
+            --font: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+
+            /* Light Mode */
+            --bg: #F0F2F5;
+            --bg-secondary: #E4E6EB;
+            --surface: #FFFFFF;
+            --surface-hover: #F8F9FA;
+            --text: #1A1D23;
+            --text-secondary: #65676B;
+            --text-tertiary: #8A8D91;
+            --border: #D1D5DB;
+            --border-light: #E5E7EB;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+            --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
+            --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
+            --shadow-glow: 0 0 20px rgba(0,120,212,0.15);
+
+            /* Accent Colors */
+            --primary: #0078D4;
+            --primary-hover: #106EBE;
+            --primary-light: rgba(0,120,212,0.08);
+            --primary-glow: rgba(0,120,212,0.2);
+
+            /* Block Colors */
+            --block-urgent: #E74C3C;
+            --block-urgent-bg: rgba(231,76,60,0.08);
+            --block-urgent-border: rgba(231,76,60,0.25);
+            --block-important: #F39C12;
+            --block-important-bg: rgba(243,156,18,0.08);
+            --block-important-border: rgba(243,156,18,0.25);
+            --block-canwait: #27AE60;
+            --block-canwait-bg: rgba(39,174,96,0.08);
+            --block-canwait-border: rgba(39,174,96,0.25);
+            --block-quick: #8E44AD;
+            --block-quick-bg: rgba(142,68,173,0.08);
+            --block-quick-border: rgba(142,68,173,0.25);
+
+            /* Day Chips */
+            --day-seg: #3498DB;
+            --day-ter: #E67E22;
+            --day-qua: #2ECC71;
+            --day-qui: #9B59B6;
+            --day-sex: #1ABC9C;
+            --day-sab: #E74C3C;
+            --day-dom: #F39C12;
+            --day-hoje: #0078D4;
+
+            /* Misc */
+            --radius: 12px;
+            --radius-sm: 8px;
+            --radius-xs: 6px;
+            --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+            /* Glass */
+            --glass-bg: rgba(255,255,255,0.7);
+            --glass-border: rgba(255,255,255,0.3);
+            --glass-blur: 12px;
+
+            /* Completed */
+            --completed-bg: rgba(39,174,96,0.06);
+        }
+
+        /* ========== DARK MODE ========== */
+        [data-theme="dark"] {
+            --bg: #0F1117;
+            --bg-secondary: #1A1D27;
+            --surface: #1E2130;
+            --surface-hover: #262A3A;
+            --text: #E8EAED;
+            --text-secondary: #9AA0A6;
+            --text-tertiary: #6B7280;
+            --border: #2D3348;
+            --border-light: #252940;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.2);
+            --shadow-md: 0 4px 16px rgba(0,0,0,0.3);
+            --shadow-lg: 0 8px 32px rgba(0,0,0,0.4);
+            --shadow-glow: 0 0 20px rgba(0,120,212,0.25);
+
+            --primary-light: rgba(0,120,212,0.15);
+            --primary-glow: rgba(0,120,212,0.3);
+
+            --block-urgent-bg: rgba(231,76,60,0.12);
+            --block-urgent-border: rgba(231,76,60,0.3);
+            --block-important-bg: rgba(243,156,18,0.12);
+            --block-important-border: rgba(243,156,18,0.3);
+            --block-canwait-bg: rgba(39,174,96,0.12);
+            --block-canwait-border: rgba(39,174,96,0.3);
+            --block-quick-bg: rgba(142,68,173,0.12);
+            --block-quick-border: rgba(142,68,173,0.3);
+
+            --glass-bg: rgba(30,33,48,0.75);
+            --glass-border: rgba(45,51,72,0.5);
+
+            --completed-bg: rgba(39,174,96,0.1);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root:not([data-theme="light"]) {
+                --bg: #0F1117;
+                --bg-secondary: #1A1D27;
+                --surface: #1E2130;
+                --surface-hover: #262A3A;
+                --text: #E8EAED;
+                --text-secondary: #9AA0A6;
+                --text-tertiary: #6B7280;
+                --border: #2D3348;
+                --border-light: #252940;
+                --shadow-sm: 0 1px 3px rgba(0,0,0,0.2);
+                --shadow-md: 0 4px 16px rgba(0,0,0,0.3);
+                --shadow-lg: 0 8px 32px rgba(0,0,0,0.4);
+                --shadow-glow: 0 0 20px rgba(0,120,212,0.25);
+                --primary-light: rgba(0,120,212,0.15);
+                --primary-glow: rgba(0,120,212,0.3);
+                --block-urgent-bg: rgba(231,76,60,0.12);
+                --block-urgent-border: rgba(231,76,60,0.3);
+                --block-important-bg: rgba(243,156,18,0.12);
+                --block-important-border: rgba(243,156,18,0.3);
+                --block-canwait-bg: rgba(39,174,96,0.12);
+                --block-canwait-border: rgba(39,174,96,0.3);
+                --block-quick-bg: rgba(142,68,173,0.12);
+                --block-quick-border: rgba(142,68,173,0.3);
+                --glass-bg: rgba(30,33,48,0.75);
+                --glass-border: rgba(45,51,72,0.5);
+                --completed-bg: rgba(39,174,96,0.1);
+            }
+        }
+
+        /* ========== RESET & BASE ========== */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: var(--font);
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            transition: background var(--transition), color var(--transition);
+            overflow-x: hidden;
+        }
+
+        /* ========== HEADER ========== */
+        .header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: var(--glass-bg);
+            backdrop-filter: blur(var(--glass-blur));
+            -webkit-backdrop-filter: blur(var(--glass-blur));
+            border-bottom: 1px solid var(--glass-border);
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-logo {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .header-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text);
+            letter-spacing: -0.3px;
+        }
+
+        .header-title span {
+            color: var(--primary);
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .header-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 14px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--surface);
+            color: var(--text-secondary);
+            font-family: var(--font);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all var(--transition);
+            text-decoration: none;
+        }
+
+        .header-btn:hover {
+            background: var(--surface-hover);
+            color: var(--text);
+            border-color: var(--primary);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .header-btn svg {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+        }
+
+        .theme-toggle {
+            width: 36px;
+            height: 36px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+
+        /* ========== FILTER BAR ========== */
+        .filter-bar {
+            padding: 10px 24px;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border-light);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+
+        .filter-bar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .filter-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+            margin-right: 4px;
+        }
+
+        .filter-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--text-secondary);
+            font-family: var(--font);
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all var(--transition);
+            white-space: nowrap;
+        }
+
+        .filter-chip:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .filter-chip.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .filter-chip .chip-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        /* ========== MAIN LAYOUT ========== */
+        .main {
+            flex: 1;
+            display: flex;
+            gap: 0;
+            overflow: hidden;
+        }
+
+        /* ========== BLOCKS PANEL (LEFT) ========== */
+        .blocks-panel {
+            flex: 1;
+            display: flex;
+            flex-wrap: wrap;
+            align-content: flex-start;
+            gap: 16px;
+            padding: 20px;
+            overflow-y: auto;
+            min-width: 0;
+        }
+
+        .block-card {
+            flex: 1 1 calc(50% - 8px);
+            min-width: 280px;
+            max-height: 500px;
+            display: flex;
+            flex-direction: column;
+            background: var(--glass-bg);
+            backdrop-filter: blur(var(--glass-blur));
+            -webkit-backdrop-filter: blur(var(--glass-blur));
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+            transition: all var(--transition);
+            overflow: hidden;
+        }
+
+        .block-card:hover {
+            box-shadow: var(--shadow-md);
+        }
+
+        .block-card.drag-over {
+            border-color: var(--primary);
+            box-shadow: var(--shadow-glow);
+            transform: scale(1.01);
+        }
+
+        .block-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border-light);
+            gap: 8px;
+        }
+
+        .block-header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .block-color-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .block-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text);
+            border: none;
+            background: transparent;
+            font-family: var(--font);
+            padding: 2px 4px;
+            border-radius: var(--radius-xs);
+            width: 100%;
+            min-width: 0;
+            cursor: text;
+            transition: all var(--transition);
+        }
+
+        .block-title:focus {
+            outline: none;
+            background: var(--primary-light);
+            box-shadow: 0 0 0 2px var(--primary-glow);
+        }
+
+        .block-count {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-tertiary);
+            background: var(--bg-secondary);
+            padding: 2px 8px;
+            border-radius: 10px;
+            flex-shrink: 0;
+        }
+
+        .block-actions {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            flex-shrink: 0;
+        }
+
+        .block-action-btn {
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            background: transparent;
+            color: var(--text-tertiary);
+            border-radius: var(--radius-xs);
+            cursor: pointer;
+            transition: all var(--transition);
+        }
+
+        .block-action-btn:hover {
+            background: var(--bg-secondary);
+            color: var(--text);
+        }
+
+        .block-action-btn.danger:hover {
+            background: rgba(231,76,60,0.1);
+            color: var(--block-urgent);
+        }
+
+        .block-action-btn svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        .block-tasks {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            min-height: 60px;
+            scrollbar-width: thin;
+            scrollbar-color: var(--border) transparent;
+        }
+
+        .block-tasks::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .block-tasks::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .block-tasks::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 2px;
+        }
+
+        .block-empty {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            min-height: 60px;
+            color: var(--text-tertiary);
+            font-size: 12px;
+            font-style: italic;
+            border: 2px dashed var(--border-light);
+            border-radius: var(--radius-sm);
+            margin: 4px;
+            transition: all var(--transition);
+        }
+
+        .block-card.drag-over .block-empty {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .block-footer {
+            padding: 8px 12px;
+            border-top: 1px solid var(--border-light);
+        }
+
+        .block-focus-btn {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 8px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--surface);
+            color: var(--text-secondary);
+            font-family: var(--font);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition);
+        }
+
+        .block-focus-btn:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .block-focus-btn svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        /* Add Block Card */
+        .add-block-card {
+            flex: 1 1 calc(50% - 8px);
+            min-width: 280px;
+            min-height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px dashed var(--border);
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: all var(--transition);
+            background: transparent;
+            font-family: var(--font);
+            color: var(--text-tertiary);
+            gap: 8px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .add-block-card:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .add-block-card svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        /* ========== INBOX PANEL (RIGHT) ========== */
+        .inbox-panel {
+            width: 340px;
+            min-width: 300px;
+            border-left: 1px solid var(--border-light);
+            background: var(--surface);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .inbox-header {
+            padding: 16px;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .inbox-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .inbox-title svg {
+            width: 18px;
+            height: 18px;
+            color: var(--primary);
+        }
+
+        .inbox-subtitle {
+            font-size: 12px;
+            color: var(--text-tertiary);
+        }
+
+        .inbox-input-area {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .inbox-input-wrapper {
+            display: flex;
+            gap: 8px;
+        }
+
+        .inbox-input {
+            flex: 1;
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--font);
+            font-size: 13px;
+            transition: all var(--transition);
+        }
+
+        .inbox-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-glow);
+            background: var(--surface);
+        }
+
+        .inbox-input::placeholder {
+            color: var(--text-tertiary);
+        }
+
+        .inbox-add-btn {
+            width: 38px;
+            height: 38px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            border-radius: var(--radius-sm);
+            background: var(--primary);
+            color: white;
+            cursor: pointer;
+            transition: all var(--transition);
+            flex-shrink: 0;
+        }
+
+        .inbox-add-btn:hover {
+            background: var(--primary-hover);
+            transform: scale(1.05);
+        }
+
+        .inbox-add-btn:active {
+            transform: scale(0.95);
+        }
+
+        .inbox-add-btn svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .inbox-paste-hint {
+            margin-top: 6px;
+            font-size: 11px;
+            color: var(--text-tertiary);
+        }
+
+        .inbox-tasks {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            scrollbar-width: thin;
+            scrollbar-color: var(--border) transparent;
+        }
+
+        .inbox-tasks::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .inbox-tasks::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .inbox-tasks::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 2px;
+        }
+
+        .inbox-panel.drag-over .inbox-tasks {
+            background: var(--primary-light);
+        }
+
+        .inbox-empty {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            gap: 8px;
+            color: var(--text-tertiary);
+            font-size: 13px;
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+        .inbox-empty svg {
+            width: 40px;
+            height: 40px;
+            opacity: 0.3;
+        }
+
+        /* ========== TASK CARD ========== */
+        .task-card {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            padding: 10px 12px;
+            background: var(--surface);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-sm);
+            cursor: grab;
+            transition: all var(--transition);
+            position: relative;
+            user-select: none;
+            animation: fadeSlideIn 0.25s ease;
+        }
+
+        @keyframes fadeSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-6px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .task-card:hover {
+            border-color: var(--border);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .task-card.dragging {
+            opacity: 0.4;
+            cursor: grabbing;
+            transform: scale(0.98);
+        }
+
+        .task-card.completed {
+            background: var(--completed-bg);
+        }
+
+        .task-card.completed .task-text {
+            text-decoration: line-through;
+            color: var(--text-tertiary);
+        }
+
+        .task-card.hidden-by-filter {
+            display: none;
+        }
+
+        .task-checkbox {
+            width: 18px;
+            height: 18px;
+            border: 2px solid var(--border);
+            border-radius: 50%;
+            flex-shrink: 0;
+            cursor: pointer;
+            transition: all var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 1px;
+        }
+
+        .task-checkbox:hover {
+            border-color: var(--primary);
+        }
+
+        .task-card.completed .task-checkbox {
+            background: var(--block-canwait);
+            border-color: var(--block-canwait);
+        }
+
+        .task-checkbox svg {
+            width: 10px;
+            height: 10px;
+            color: white;
+            opacity: 0;
+            transition: opacity var(--transition);
+        }
+
+        .task-card.completed .task-checkbox svg {
+            opacity: 1;
+        }
+
+        .task-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .task-text {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text);
+            word-break: break-word;
+            line-height: 1.4;
+        }
+
+        .task-text-input {
+            width: 100%;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text);
+            font-family: var(--font);
+            border: 1px solid var(--primary);
+            border-radius: var(--radius-xs);
+            padding: 2px 6px;
+            background: var(--surface);
+            outline: none;
+            box-shadow: 0 0 0 2px var(--primary-glow);
+        }
+
+        .task-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-top: 6px;
+        }
+
+        .day-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition);
+            border: 1px solid transparent;
+        }
+
+        .day-chip:hover {
+            filter: brightness(1.1);
+            transform: scale(1.05);
+        }
+
+        .day-chip .remove-chip {
+            width: 10px;
+            height: 10px;
+            display: none;
+            cursor: pointer;
+        }
+
+        .day-chip:hover .remove-chip {
+            display: block;
+        }
+
+        .task-actions {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            opacity: 0;
+            transition: opacity var(--transition);
+            flex-shrink: 0;
+        }
+
+        .task-card:hover .task-actions {
+            opacity: 1;
+        }
+
+        .task-action-btn {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            background: transparent;
+            color: var(--text-tertiary);
+            border-radius: var(--radius-xs);
+            cursor: pointer;
+            transition: all var(--transition);
+        }
+
+        .task-action-btn:hover {
+            background: var(--bg-secondary);
+            color: var(--text);
+        }
+
+        .task-action-btn.danger:hover {
+            background: rgba(231,76,60,0.1);
+            color: var(--block-urgent);
+        }
+
+        .task-action-btn svg {
+            width: 12px;
+            height: 12px;
+        }
+
+        /* ========== DAY PICKER DROPDOWN ========== */
+        .day-picker {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            z-index: 50;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            box-shadow: var(--shadow-lg);
+            padding: 6px;
+            display: none;
+            min-width: 140px;
+            animation: dropIn 0.15s ease;
+        }
+
+        @keyframes dropIn {
+            from {
+                opacity: 0;
+                transform: translateY(-4px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .day-picker.open {
+            display: block;
+        }
+
+        .day-picker-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 10px;
+            border-radius: var(--radius-xs);
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text);
+            transition: all var(--transition);
+            border: none;
+            background: transparent;
+            width: 100%;
+            font-family: var(--font);
+            text-align: left;
+        }
+
+        .day-picker-item:hover {
+            background: var(--bg-secondary);
+        }
+
+        .day-picker-item .picker-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        /* ========== CONFIRMATION MODAL ========== */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 200;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .modal-overlay.open {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-box {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-lg);
+            padding: 24px;
+            max-width: 380px;
+            width: 90%;
+            animation: scaleIn 0.2s ease;
+        }
+
+        @keyframes scaleIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .modal-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .modal-text {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+
+        .modal-btn {
+            padding: 8px 16px;
+            border-radius: var(--radius-sm);
+            font-family: var(--font);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition);
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--text);
+        }
+
+        .modal-btn:hover {
+            background: var(--bg-secondary);
+        }
+
+        .modal-btn.danger {
+            background: var(--block-urgent);
+            color: white;
+            border-color: var(--block-urgent);
+        }
+
+        .modal-btn.danger:hover {
+            filter: brightness(1.1);
+        }
+
+        /* ========== INBOX PDF IMPORT TOOLS ========== */
+        .inbox-tools-row {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .inbox-tool-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--primary);
+            font-family: var(--font);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition);
+            width: 100%;
+        }
+
+        .inbox-tool-btn:hover {
+            background: var(--primary-light);
+            border-color: var(--primary);
+            box-shadow: var(--shadow-sm);
+            transform: translateY(-1px);
+        }
+
+        .inbox-tool-btn svg {
+            width: 16px;
+            height: 16px;
+            color: var(--primary);
+            flex-shrink: 0;
+        }
+
+        /* ========== PDF DRAG & DROP OVERLAY ========== */
+        .pdf-drop-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 300;
+            background: rgba(0, 120, 212, 0.15);
+            backdrop-filter: blur(6px);
+            border: 3px dashed var(--primary);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            color: var(--primary);
+            pointer-events: none;
+            transition: all var(--transition);
+        }
+
+        .pdf-drop-overlay.active {
+            display: flex;
+        }
+
+        .pdf-drop-icon {
+            width: 64px;
+            height: 64px;
+            animation: pulseGlow 1.5s infinite ease-in-out;
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { transform: scale(1); opacity: 0.9; }
+            50% { transform: scale(1.08); opacity: 1; }
+        }
+
+        .pdf-drop-text {
+            font-size: 18px;
+            font-weight: 700;
+            text-align: center;
+            background: var(--surface);
+            color: var(--text);
+            padding: 10px 24px;
+            border-radius: 30px;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border);
+        }
+
+        /* ========== PDF IMPORT MODAL ========== */
+        .pdf-modal-box {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-lg);
+            padding: 24px;
+            max-width: 620px;
+            width: 95%;
+            max-height: 88vh;
+            display: flex;
+            flex-direction: column;
+            animation: scaleIn 0.2s ease;
+            overflow: hidden;
+        }
+
+        .pdf-modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .pdf-modal-title-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .pdf-modal-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: var(--primary-light);
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .pdf-modal-icon svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .pdf-modal-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .pdf-modal-subtitle {
+            font-size: 12px;
+            color: var(--text-tertiary);
+        }
+
+        .pdf-stats-pills {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        .pdf-stat-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            background: var(--bg);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-light);
+        }
+
+        .pdf-stat-pill.highlight {
+            background: var(--primary-light);
+            color: var(--primary);
+            border-color: var(--primary-glow);
+        }
+
+        .pdf-config-section {
+            background: var(--bg);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-sm);
+            padding: 12px 14px;
+            margin-bottom: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .pdf-config-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            font-size: 13px;
+        }
+
+        .pdf-config-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text);
+            font-weight: 500;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .pdf-config-label input[type="checkbox"] {
+            accent-color: var(--primary);
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+
+        .pdf-subtask-select {
+            padding: 5px 10px;
+            border-radius: var(--radius-xs);
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--text);
+            font-family: var(--font);
+            font-size: 12px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .pdf-preview-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .pdf-preview-select-all {
+            color: var(--primary);
+            cursor: pointer;
+            text-decoration: underline;
+            background: none;
+            border: none;
+            font-family: var(--font);
+            font-size: 12px;
+        }
+
+        .pdf-preview-list {
+            flex: 1;
+            overflow-y: auto;
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-sm);
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            background: var(--surface);
+            max-height: 250px;
+            min-height: 130px;
+            scrollbar-width: thin;
+        }
+
+        .pdf-preview-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 7px 10px;
+            border-radius: var(--radius-xs);
+            background: var(--bg);
+            border: 1px solid var(--border-light);
+            font-size: 12.5px;
+            transition: all var(--transition);
+        }
+
+        .pdf-preview-item.subtask-item {
+            margin-left: 14px;
+            background: var(--surface);
+            border-left: 3px solid var(--primary);
+        }
+
+        .pdf-preview-item input[type="checkbox"] {
+            accent-color: var(--primary);
+            cursor: pointer;
+        }
+
+        .pdf-preview-text {
+            flex: 1;
+            word-break: break-word;
+            line-height: 1.35;
+            color: var(--text);
+        }
+
+        .pdf-preview-item.subtask-item .pdf-preview-text {
+            color: var(--text-secondary);
+        }
+
+        .pdf-preview-day {
+            padding: 2px 7px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        /* ========== TOAST NOTIFICATION ========== */
+        .toast-notification {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 400;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-lg);
+            border-radius: var(--radius);
+            padding: 12px 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text);
+            transform: translateY(30px);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+        }
+
+        .toast-notification.active {
+            transform: translateY(0);
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .toast-icon-check {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #107C41;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .toast-icon-check svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .main {
+                flex-direction: column-reverse;
+            }
+
+            .inbox-panel {
+                width: 100%;
+                min-width: 0;
+                border-left: none;
+                border-bottom: 1px solid var(--border-light);
+                max-height: 300px;
+            }
+
+            .blocks-panel {
+                flex-direction: column;
+                flex-wrap: nowrap;
+            }
+
+            .block-card,
+            .add-block-card {
+                flex: none;
+                min-width: 0;
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header {
+                padding: 10px 14px;
+            }
+
+            .header-btn span {
+                display: none;
+            }
+
+            .filter-bar {
+                padding: 8px 14px;
+            }
+
+            .blocks-panel {
+                padding: 12px;
+                gap: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- HEADER -->
+    <header class="header" id="header">
+        <div class="header-left">
+            <img src="Logo/Grupo.png" alt="Focus Logo" class="header-logo">
+            <h1 class="header-title">Focus <span>Organizer</span></h1>
+        </div>
+        <div class="header-actions">
+            <a href="index.html" class="header-btn" id="btn-back-focus" title="Voltar ao Modo Foco">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                <span>Modo Foco</span>
+            </a>
+            <button class="header-btn theme-toggle" id="btn-theme" title="Alternar tema">
+                <svg id="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                <svg id="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- FILTER BAR -->
+    <div class="filter-bar" id="filter-bar">
+        <span class="filter-label">Filtrar:</span>
+        <button class="filter-chip active" data-filter="all">Todos</button>
+        <button class="filter-chip" data-filter="hoje"><span class="chip-dot" style="background:var(--day-hoje)"></span>Hoje</button>
+        <button class="filter-chip" data-filter="segunda"><span class="chip-dot" style="background:var(--day-seg)"></span>Segunda</button>
+        <button class="filter-chip" data-filter="terca"><span class="chip-dot" style="background:var(--day-ter)"></span>Terça</button>
+        <button class="filter-chip" data-filter="quarta"><span class="chip-dot" style="background:var(--day-qua)"></span>Quarta</button>
+        <button class="filter-chip" data-filter="quinta"><span class="chip-dot" style="background:var(--day-qui)"></span>Quinta</button>
+        <button class="filter-chip" data-filter="sexta"><span class="chip-dot" style="background:var(--day-sex)"></span>Sexta</button>
+        <button class="filter-chip" data-filter="sabado"><span class="chip-dot" style="background:var(--day-sab)"></span>Sábado</button>
+        <button class="filter-chip" data-filter="domingo"><span class="chip-dot" style="background:var(--day-dom)"></span>Domingo</button>
+    </div>
+
+    <!-- MAIN LAYOUT -->
+    <main class="main" id="main">
+        <!-- BLOCKS PANEL (LEFT) -->
+        <div class="blocks-panel" id="blocks-panel">
+            <!-- Blocks are rendered by JS -->
+        </div>
+
+        <!-- INBOX PANEL (RIGHT) -->
+        <div class="inbox-panel" id="inbox-panel">
+            <div class="inbox-header">
+                <div class="inbox-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg>
+                    Inbox
+                    <span class="block-count" id="inbox-count">0</span>
+                </div>
+                <div class="inbox-subtitle">Adicione tarefas e arraste para os blocos</div>
+            </div>
+            <div class="inbox-input-area">
+                <div class="inbox-input-wrapper">
+                    <input type="text" class="inbox-input" id="inbox-input" placeholder="Nova tarefa..." autocomplete="off">
+                    <button class="inbox-add-btn" id="btn-inbox-add" title="Adicionar tarefa">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    </button>
+                </div>
+                <div class="inbox-tools-row">
+                    <button class="inbox-tool-btn" id="btn-import-pdf" type="button" title="Importar tarefas de PDF exportado do Microsoft To Do">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+                        <span>Importar PDF do To Do</span>
+                    </button>
+                    <input type="file" id="pdf-file-input" accept="application/pdf" style="display: none;">
+                </div>
+                <p class="inbox-paste-hint">Dica: cole múltiplas linhas ou arraste um PDF do Microsoft To Do aqui</p>
+            </div>
+            <div class="inbox-tasks" id="inbox-tasks">
+                <!-- Tasks rendered by JS -->
+            </div>
+        </div>
+    </main>
+
+    <!-- CONFIRMATION MODAL -->
+    <div class="modal-overlay" id="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-title" id="modal-title">Confirmar</div>
+            <div class="modal-text" id="modal-text">Tem certeza?</div>
+            <div class="modal-actions">
+                <button class="modal-btn" id="modal-cancel">Cancelar</button>
+                <button class="modal-btn danger" id="modal-confirm">Remover</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PDF IMPORT PREVIEW MODAL -->
+    <div class="modal-overlay" id="pdf-modal-overlay">
+        <div class="pdf-modal-box">
+            <div class="pdf-modal-header">
+                <div class="pdf-modal-title-group">
+                    <div class="pdf-modal-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+                    </div>
+                    <div>
+                        <div class="pdf-modal-title" id="pdf-modal-filename">Importar do Microsoft To Do</div>
+                        <div class="pdf-modal-subtitle">Selecione as tarefas e subtarefas que deseja enviar para o Inbox</div>
+                    </div>
+                </div>
+                <button class="block-action-btn" id="pdf-modal-close" title="Fechar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+
+            <div class="pdf-stats-pills">
+                <span class="pdf-stat-pill highlight" id="stat-pill-total">0 tarefas encontradas</span>
+                <span class="pdf-stat-pill" id="stat-pill-main">0 principais</span>
+                <span class="pdf-stat-pill" id="stat-pill-sub">0 subtarefas</span>
+                <span class="pdf-stat-pill" id="stat-pill-days">0 com data</span>
+            </div>
+
+            <div class="pdf-config-section">
+                <div class="pdf-config-row">
+                    <label class="pdf-config-label">
+                        <input type="checkbox" id="pdf-opt-include-subtasks" checked>
+                        <span>Incluir subtarefas</span>
+                    </label>
+                    <select class="pdf-subtask-select" id="pdf-opt-subtask-format">
+                        <option value="prefix_parent">[Tarefa] Subtarefa</option>
+                        <option value="arrow" selected>↳ Subtarefa</option>
+                        <option value="plain">Apenas subtarefa</option>
+                    </select>
+                </div>
+                <div class="pdf-config-row">
+                    <label class="pdf-config-label">
+                        <input type="checkbox" id="pdf-opt-apply-days" checked>
+                        <span>Atribuir marcadores de dias detectados (Hoje, Amanhã, etc.)</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="pdf-preview-header">
+                <span id="pdf-preview-count">Pré-visualização (0 selecionadas):</span>
+                <div>
+                    <button type="button" class="pdf-preview-select-all" id="btn-toggle-select-all">Desmarcar todas</button>
+                </div>
+            </div>
+
+            <div class="pdf-preview-list" id="pdf-preview-list">
+                <!-- Preview items inserted by JS -->
+            </div>
+
+            <div class="modal-actions" style="margin-top: 14px;">
+                <button class="modal-btn" id="pdf-btn-cancel">Cancelar</button>
+                <button class="modal-btn" id="pdf-btn-confirm" style="background: var(--primary); color: white; border-color: var(--primary);">
+                    Importar para o Inbox
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- DRAG & DROP OVERLAY -->
+    <div class="pdf-drop-overlay" id="pdf-drop-overlay">
+        <svg class="pdf-drop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+        <div class="pdf-drop-text">Solte o PDF do Microsoft To Do aqui</div>
+    </div>
+
+    <!-- TOAST -->
+    <div class="toast-notification" id="toast-notification">
+        <div class="toast-icon-check">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        </div>
+        <span id="toast-message">Tarefas importadas com sucesso!</span>
+    </div>
+
+    <script>
+        // ===========================
+        // DATA MODEL
+        // ===========================
+        const STORAGE_KEY = 'focusOrganizerState';
+        const FOCUS_HANDOFF_KEY = 'focusAppState';
+
+        const DAY_CONFIG = {
+            hoje:    { label: 'Hoje',    color: 'var(--day-hoje)',  bg: 'rgba(0,120,212,0.12)' },
+            segunda: { label: 'Segunda', color: 'var(--day-seg)',   bg: 'rgba(52,152,219,0.12)' },
+            terca:   { label: 'Terça',   color: 'var(--day-ter)',   bg: 'rgba(230,126,34,0.12)' },
+            quarta:  { label: 'Quarta',  color: 'var(--day-qua)',   bg: 'rgba(46,204,113,0.12)' },
+            quinta:  { label: 'Quinta',  color: 'var(--day-qui)',   bg: 'rgba(155,89,182,0.12)' },
+            sexta:   { label: 'Sexta',   color: 'var(--day-sex)',   bg: 'rgba(26,188,156,0.12)' },
+            sabado:  { label: 'Sábado',  color: 'var(--day-sab)',   bg: 'rgba(231,76,60,0.12)' },
+            domingo: { label: 'Domingo', color: 'var(--day-dom)',   bg: 'rgba(243,156,18,0.12)' },
+        };
+
+        const DEFAULT_BLOCKS = [
+            { id: genId(), title: 'Urgente',        colorVar: 'urgent',    tasks: [] },
+            { id: genId(), title: 'Importante',     colorVar: 'important', tasks: [] },
+            { id: genId(), title: 'Pode esperar',   colorVar: 'canwait',   tasks: [] },
+            { id: genId(), title: 'Tarefas rápidas', colorVar: 'quick',    tasks: [] },
+        ];
+
+        const BLOCK_COLORS = ['urgent', 'important', 'canwait', 'quick'];
+        let nextColorIndex = 0;
+
+        let state = {
+            inbox: [],
+            blocks: [],
+            activeFilter: 'all',
+        };
+
+        let dragData = null; // { taskId, sourceType: 'inbox'|'block', sourceBlockId? }
+
+        // ===========================
+        // UTILITIES
+        // ===========================
+        function genId() {
+            return 'id_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
+        }
+
+        function createTask(text) {
+            return {
+                id: genId(),
+                text: text.trim(),
+                completed: false,
+                days: [],
+            };
+        }
+
+        // ===========================
+        // PERSISTENCE
+        // ===========================
+        function saveState() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+            } catch (e) {
+                console.error('Failed to save state:', e);
+            }
+        }
+
+        function loadState() {
+            try {
+                const data = localStorage.getItem(STORAGE_KEY);
+                if (data) {
+                    const parsed = JSON.parse(data);
+                    state.inbox = parsed.inbox || [];
+                    state.blocks = parsed.blocks || [];
+                    state.activeFilter = parsed.activeFilter || 'all';
+                    return true;
+                }
+            } catch (e) {
+                console.error('Failed to load state:', e);
+            }
+            return false;
+        }
+
+        // ===========================
+        // THEME
+        // ===========================
+        function initTheme() {
+            const saved = localStorage.getItem('focusOrganizerTheme');
+            if (saved) {
+                document.documentElement.setAttribute('data-theme', saved);
+            }
+            updateThemeIcon();
+        }
+
+        function toggleTheme() {
+            const current = document.documentElement.getAttribute('data-theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+            let next;
+            if (current === 'dark') next = 'light';
+            else if (current === 'light') next = 'dark';
+            else next = prefersDark ? 'light' : 'dark';
+
+            document.documentElement.setAttribute('data-theme', next);
+            localStorage.setItem('focusOrganizerTheme', next);
+            updateThemeIcon();
+        }
+
+        function updateThemeIcon() {
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark' ||
+                (!document.documentElement.getAttribute('data-theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+            document.getElementById('icon-sun').style.display = isDark ? 'none' : 'block';
+            document.getElementById('icon-moon').style.display = isDark ? 'block' : 'none';
+        }
+
+        // ===========================
+        // MODAL
+        // ===========================
+        let modalResolve = null;
+
+        function showModal(title, text) {
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-text').textContent = text;
+            document.getElementById('modal-overlay').classList.add('open');
+            return new Promise(resolve => {
+                modalResolve = resolve;
+            });
+        }
+
+        function closeModal(result) {
+            document.getElementById('modal-overlay').classList.remove('open');
+            if (modalResolve) {
+                modalResolve(result);
+                modalResolve = null;
+            }
+        }
+
+        document.getElementById('modal-confirm').addEventListener('click', () => closeModal(true));
+        document.getElementById('modal-cancel').addEventListener('click', () => closeModal(false));
+        document.getElementById('modal-overlay').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) closeModal(false);
+        });
+
+        // ===========================
+        // RENDER: TASK CARD
+        // ===========================
+        function renderTaskCard(task) {
+            const card = document.createElement('div');
+            card.className = 'task-card' + (task.completed ? ' completed' : '');
+            card.setAttribute('draggable', 'true');
+            card.dataset.taskId = task.id;
+
+            // Apply filter visibility
+            if (state.activeFilter !== 'all') {
+                if (!task.days.includes(state.activeFilter)) {
+                    card.classList.add('hidden-by-filter');
+                }
+            }
+
+            // Checkbox
+            const checkbox = document.createElement('div');
+            checkbox.className = 'task-checkbox';
+            checkbox.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+            checkbox.addEventListener('click', (e) => {
+                e.stopPropagation();
+                task.completed = !task.completed;
+                saveState();
+                renderAll();
+            });
+
+            // Content
+            const content = document.createElement('div');
+            content.className = 'task-content';
+
+            const textEl = document.createElement('div');
+            textEl.className = 'task-text';
+            textEl.textContent = task.text;
+            textEl.addEventListener('dblclick', (e) => {
+                e.stopPropagation();
+                startEditTask(task, textEl, card);
+            });
+            content.appendChild(textEl);
+
+            // Day chips
+            if (task.days.length > 0) {
+                const chipsEl = document.createElement('div');
+                chipsEl.className = 'task-chips';
+                task.days.forEach(dayKey => {
+                    const cfg = DAY_CONFIG[dayKey];
+                    if (!cfg) return;
+                    const chip = document.createElement('span');
+                    chip.className = 'day-chip';
+                    chip.style.background = cfg.bg;
+                    chip.style.color = cfg.color;
+                    chip.innerHTML = `${cfg.label}<svg class="remove-chip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
+                    chip.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        task.days = task.days.filter(d => d !== dayKey);
+                        saveState();
+                        renderAll();
+                    });
+                    chipsEl.appendChild(chip);
+                });
+                content.appendChild(chipsEl);
+            }
+
+            // Actions
+            const actions = document.createElement('div');
+            actions.className = 'task-actions';
+
+            // Day picker button
+            const dayBtn = document.createElement('button');
+            dayBtn.className = 'task-action-btn';
+            dayBtn.title = 'Adicionar dia';
+            dayBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>';
+            dayBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                toggleDayPicker(task, card);
+            });
+
+            // Edit button
+            const editBtn = document.createElement('button');
+            editBtn.className = 'task-action-btn';
+            editBtn.title = 'Editar';
+            editBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>';
+            editBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                startEditTask(task, textEl, card);
+            });
+
+            // Delete button
+            const delBtn = document.createElement('button');
+            delBtn.className = 'task-action-btn danger';
+            delBtn.title = 'Excluir';
+            delBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>';
+            delBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                deleteTask(task.id);
+            });
+
+            actions.appendChild(dayBtn);
+            actions.appendChild(editBtn);
+            actions.appendChild(delBtn);
+
+            card.appendChild(checkbox);
+            card.appendChild(content);
+            card.appendChild(actions);
+
+            // Drag events
+            card.addEventListener('dragstart', (e) => {
+                card.classList.add('dragging');
+                const source = findTaskLocation(task.id);
+                dragData = {
+                    taskId: task.id,
+                    sourceType: source.type,
+                    sourceBlockId: source.blockId,
+                };
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', task.id);
+                // Delay to let browser capture drag image
+                requestAnimationFrame(() => {
+                    card.style.opacity = '0.4';
+                });
+            });
+
+            card.addEventListener('dragend', () => {
+                card.classList.remove('dragging');
+                card.style.opacity = '';
+                dragData = null;
+                clearAllDragOver();
+            });
+
+            return card;
+        }
+
+        function startEditTask(task, textEl, card) {
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'task-text-input';
+            input.value = task.text;
+            textEl.replaceWith(input);
+            input.focus();
+            input.select();
+
+            const finish = () => {
+                const val = input.value.trim();
+                if (val) {
+                    task.text = val;
+                    saveState();
+                }
+                renderAll();
+            };
+
+            input.addEventListener('blur', finish);
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+                if (e.key === 'Escape') { input.value = task.text; input.blur(); }
+            });
+        }
+
+        function toggleDayPicker(task, card) {
+            // Close any existing picker
+            document.querySelectorAll('.day-picker.open').forEach(p => p.remove());
+
+            const picker = document.createElement('div');
+            picker.className = 'day-picker open';
+
+            Object.entries(DAY_CONFIG).forEach(([key, cfg]) => {
+                const item = document.createElement('button');
+                item.className = 'day-picker-item';
+                const isActive = task.days.includes(key);
+                item.innerHTML = `<span class="picker-dot" style="background:${isActive ? cfg.color : 'var(--border)'}"></span>${cfg.label}${isActive ? ' ✓' : ''}`;
+                item.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (task.days.includes(key)) {
+                        task.days = task.days.filter(d => d !== key);
+                    } else {
+                        task.days.push(key);
+                    }
+                    saveState();
+                    picker.remove();
+                    renderAll();
+                });
+                picker.appendChild(item);
+            });
+
+            card.style.position = 'relative';
+            card.appendChild(picker);
+
+            // Close on click outside
+            const closeHandler = (e) => {
+                if (!picker.contains(e.target)) {
+                    picker.remove();
+                    document.removeEventListener('click', closeHandler, true);
+                }
+            };
+            setTimeout(() => document.addEventListener('click', closeHandler, true), 10);
+        }
+
+        function findTaskLocation(taskId) {
+            if (state.inbox.find(t => t.id === taskId)) {
+                return { type: 'inbox', blockId: null };
+            }
+            for (const block of state.blocks) {
+                if (block.tasks.find(t => t.id === taskId)) {
+                    return { type: 'block', blockId: block.id };
+                }
+            }
+            return { type: 'unknown', blockId: null };
+        }
+
+        function removeTaskFromSource(taskId) {
+            state.inbox = state.inbox.filter(t => t.id !== taskId);
+            for (const block of state.blocks) {
+                block.tasks = block.tasks.filter(t => t.id !== taskId);
+            }
+        }
+
+        function getTaskById(taskId) {
+            const inboxTask = state.inbox.find(t => t.id === taskId);
+            if (inboxTask) return inboxTask;
+            for (const block of state.blocks) {
+                const t = block.tasks.find(t => t.id === taskId);
+                if (t) return t;
+            }
+            return null;
+        }
+
+        function deleteTask(taskId) {
+            removeTaskFromSource(taskId);
+            saveState();
+            renderAll();
+        }
+
+        // ===========================
+        // RENDER: BLOCK
+        // ===========================
+        function getBlockCSSVars(colorVar) {
+            return {
+                dot: `var(--block-${colorVar})`,
+                bg: `var(--block-${colorVar}-bg)`,
+                border: `var(--block-${colorVar}-border)`,
+            };
+        }
+
+        function renderBlock(block) {
+            const colors = getBlockCSSVars(block.colorVar);
+
+            const card = document.createElement('div');
+            card.className = 'block-card';
+            card.dataset.blockId = block.id;
+            card.style.borderTopColor = colors.dot;
+            card.style.borderTopWidth = '3px';
+
+            // Header
+            const header = document.createElement('div');
+            header.className = 'block-header';
+
+            const headerLeft = document.createElement('div');
+            headerLeft.className = 'block-header-left';
+
+            const dot = document.createElement('div');
+            dot.className = 'block-color-dot';
+            dot.style.background = colors.dot;
+
+            const titleInput = document.createElement('input');
+            titleInput.className = 'block-title';
+            titleInput.value = block.title;
+            titleInput.addEventListener('change', () => {
+                block.title = titleInput.value.trim() || block.title;
+                saveState();
+            });
+            titleInput.addEventListener('blur', () => {
+                if (!titleInput.value.trim()) {
+                    titleInput.value = block.title;
+                }
+            });
+
+            const count = document.createElement('span');
+            count.className = 'block-count';
+            const visibleTasks = state.activeFilter === 'all'
+                ? block.tasks
+                : block.tasks.filter(t => t.days.includes(state.activeFilter));
+            count.textContent = visibleTasks.length;
+
+            headerLeft.appendChild(dot);
+            headerLeft.appendChild(titleInput);
+
+            const actions = document.createElement('div');
+            actions.className = 'block-actions';
+
+            // Focus button (in header for compact view)
+            const focusBtn = document.createElement('button');
+            focusBtn.className = 'block-action-btn';
+            focusBtn.title = 'Focar neste bloco';
+            focusBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>';
+            focusBtn.addEventListener('click', () => focusOnBlock(block));
+
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'block-action-btn danger';
+            deleteBtn.title = 'Remover bloco';
+            deleteBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>';
+            deleteBtn.addEventListener('click', () => deleteBlock(block.id));
+
+            actions.appendChild(count);
+            actions.appendChild(focusBtn);
+            actions.appendChild(deleteBtn);
+
+            header.appendChild(headerLeft);
+            header.appendChild(actions);
+
+            // Tasks area
+            const tasksArea = document.createElement('div');
+            tasksArea.className = 'block-tasks';
+
+            if (block.tasks.length === 0) {
+                const empty = document.createElement('div');
+                empty.className = 'block-empty';
+                empty.textContent = 'Arraste tarefas aqui';
+                tasksArea.appendChild(empty);
+            } else {
+                block.tasks.forEach(task => {
+                    tasksArea.appendChild(renderTaskCard(task));
+                });
+            }
+
+            // Footer with focus button
+            const footer = document.createElement('div');
+            footer.className = 'block-footer';
+            const focusBtnFull = document.createElement('button');
+            focusBtnFull.className = 'block-focus-btn';
+            focusBtnFull.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> Focar neste bloco';
+            focusBtnFull.addEventListener('click', () => focusOnBlock(block));
+            footer.appendChild(focusBtnFull);
+
+            card.appendChild(header);
+            card.appendChild(tasksArea);
+            card.appendChild(footer);
+
+            // Drop zone events
+            card.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                card.classList.add('drag-over');
+            });
+
+            card.addEventListener('dragleave', (e) => {
+                if (!card.contains(e.relatedTarget)) {
+                    card.classList.remove('drag-over');
+                }
+            });
+
+            card.addEventListener('drop', (e) => {
+                e.preventDefault();
+                card.classList.remove('drag-over');
+                if (!dragData) return;
+
+                const task = getTaskById(dragData.taskId);
+                if (!task) return;
+
+                // Don't drop onto same block
+                if (dragData.sourceType === 'block' && dragData.sourceBlockId === block.id) return;
+
+                removeTaskFromSource(task.id);
+                block.tasks.push(task);
+                saveState();
+                renderAll();
+            });
+
+            return card;
+        }
+
+        async function deleteBlock(blockId) {
+            const block = state.blocks.find(b => b.id === blockId);
+            if (!block) return;
+
+            if (block.tasks.length > 0) {
+                const confirmed = await showModal(
+                    'Remover bloco',
+                    `O bloco "${block.title}" tem ${block.tasks.length} tarefa(s). As tarefas serão movidas de volta para o Inbox. Deseja continuar?`
+                );
+                if (!confirmed) return;
+                // Move tasks back to inbox
+                state.inbox.push(...block.tasks);
+            }
+
+            state.blocks = state.blocks.filter(b => b.id !== blockId);
+            saveState();
+            renderAll();
+        }
+
+        function addBlock() {
+            const colorVar = BLOCK_COLORS[nextColorIndex % BLOCK_COLORS.length];
+            nextColorIndex++;
+            const block = {
+                id: genId(),
+                title: `Bloco ${state.blocks.length + 1}`,
+                colorVar: colorVar,
+                tasks: [],
+            };
+            state.blocks.push(block);
+            saveState();
+            renderAll();
+        }
+
+        function focusOnBlock(block) {
+            const incompleteTasks = block.tasks.filter(t => !t.completed);
+            if (incompleteTasks.length === 0) {
+                alert('Não há tarefas pendentes neste bloco.');
+                return;
+            }
+            // Save tasks to shared localStorage for Focus app
+            const focusState = {
+                tasks: incompleteTasks.map(t => t.text),
+                currentIndex: 0,
+            };
+            localStorage.setItem(FOCUS_HANDOFF_KEY, JSON.stringify(focusState));
+            window.location.href = 'index.html';
+        }
+
+        // ===========================
+        // RENDER: ALL
+        // ===========================
+        function renderAll() {
+            // Render blocks
+            const blocksPanel = document.getElementById('blocks-panel');
+            blocksPanel.innerHTML = '';
+
+            state.blocks.forEach(block => {
+                blocksPanel.appendChild(renderBlock(block));
+            });
+
+            // Add block button
+            const addBtn = document.createElement('button');
+            addBtn.className = 'add-block-card';
+            addBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Novo Bloco';
+            addBtn.addEventListener('click', addBlock);
+            blocksPanel.appendChild(addBtn);
+
+            // Render inbox
+            const inboxTasks = document.getElementById('inbox-tasks');
+            inboxTasks.innerHTML = '';
+
+            if (state.inbox.length === 0) {
+                const empty = document.createElement('div');
+                empty.className = 'inbox-empty';
+                empty.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg><span>Nenhuma tarefa no inbox.<br>Digite acima para adicionar.</span>';
+                inboxTasks.appendChild(empty);
+            } else {
+                state.inbox.forEach(task => {
+                    inboxTasks.appendChild(renderTaskCard(task));
+                });
+            }
+
+            // Update inbox count
+            document.getElementById('inbox-count').textContent = state.inbox.length;
+
+            // Update filter bar
+            document.querySelectorAll('.filter-chip').forEach(chip => {
+                chip.classList.toggle('active', chip.dataset.filter === state.activeFilter);
+            });
+        }
+
+        // ===========================
+        // CLEAR DRAG OVER
+        // ===========================
+        function clearAllDragOver() {
+            document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+        }
+
+        // ===========================
+        // INBOX DRAG/DROP
+        // ===========================
+        const inboxPanel = document.getElementById('inbox-panel');
+
+        inboxPanel.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            inboxPanel.classList.add('drag-over');
+        });
+
+        inboxPanel.addEventListener('dragleave', (e) => {
+            if (!inboxPanel.contains(e.relatedTarget)) {
+                inboxPanel.classList.remove('drag-over');
+            }
+        });
+
+        inboxPanel.addEventListener('drop', (e) => {
+            e.preventDefault();
+            inboxPanel.classList.remove('drag-over');
+            if (!dragData) return;
+
+            // Don't drop back into inbox if already there
+            if (dragData.sourceType === 'inbox') return;
+
+            const task = getTaskById(dragData.taskId);
+            if (!task) return;
+
+            removeTaskFromSource(task.id);
+            state.inbox.push(task);
+            saveState();
+            renderAll();
+        });
+
+        // ===========================
+        // INBOX INPUT
+        // ===========================
+        const inboxInput = document.getElementById('inbox-input');
+        const btnInboxAdd = document.getElementById('btn-inbox-add');
+
+        function addInboxTasks(text) {
+            const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            lines.forEach(line => {
+                state.inbox.push(createTask(line));
+            });
+            if (lines.length > 0) {
+                saveState();
+                renderAll();
+            }
+        }
+
+        btnInboxAdd.addEventListener('click', () => {
+            const val = inboxInput.value.trim();
+            if (val) {
+                addInboxTasks(val);
+                inboxInput.value = '';
+                inboxInput.focus();
+            }
+        });
+
+        inboxInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                const val = inboxInput.value.trim();
+                if (val) {
+                    addInboxTasks(val);
+                    inboxInput.value = '';
+                }
+            }
+        });
+
+        // Paste multi-line support
+        inboxInput.addEventListener('paste', (e) => {
+            const pasted = e.clipboardData.getData('text');
+            if (pasted.includes('\n')) {
+                e.preventDefault();
+                const existing = inboxInput.value.trim();
+                const allText = existing ? existing + '\n' + pasted : pasted;
+                addInboxTasks(allText);
+                inboxInput.value = '';
+            }
+        });
+
+        // ===========================
+        // FILTER BAR
+        // ===========================
+        document.getElementById('filter-bar').addEventListener('click', (e) => {
+            const chip = e.target.closest('.filter-chip');
+            if (!chip) return;
+            state.activeFilter = chip.dataset.filter;
+            saveState();
+            renderAll();
+        });
+
+        // ===========================
+        // THEME TOGGLE
+        // ===========================
+        document.getElementById('btn-theme').addEventListener('click', toggleTheme);
+
+        // ===========================
+        // TOAST NOTIFICATION
+        // ===========================
+        let toastTimeout = null;
+        function showToast(msg) {
+            const toast = document.getElementById('toast-notification');
+            const msgEl = document.getElementById('toast-message');
+            if (!toast || !msgEl) return;
+            msgEl.textContent = msg;
+            toast.classList.add('active');
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('active');
+            }, 3500);
+        }
+
+        // ===========================
+        // MICROSOFT TO DO PDF IMPORT
+        // ===========================
+        if (window.pdfjsLib) {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        }
+
+        const pdfFileInput = document.getElementById('pdf-file-input');
+        const btnImportPdf = document.getElementById('btn-import-pdf');
+        const pdfModalOverlay = document.getElementById('pdf-modal-overlay');
+        const pdfModalClose = document.getElementById('pdf-modal-close');
+        const pdfBtnCancel = document.getElementById('pdf-btn-cancel');
+        const pdfBtnConfirm = document.getElementById('pdf-btn-confirm');
+        const pdfDropOverlay = document.getElementById('pdf-drop-overlay');
+
+        const pdfOptIncludeSubtasks = document.getElementById('pdf-opt-include-subtasks');
+        const pdfOptSubtaskFormat = document.getElementById('pdf-opt-subtask-format');
+        const pdfOptApplyDays = document.getElementById('pdf-opt-apply-days');
+        const btnToggleSelectAll = document.getElementById('btn-toggle-select-all');
+        const pdfPreviewList = document.getElementById('pdf-preview-list');
+        const pdfModalFilename = document.getElementById('pdf-modal-filename');
+
+        let parsedPdfTasks = []; // Array de { id, text, days: [], subtasks: [{ text, days: [] }] }
+        let selectedPreviewKeys = new Set();
+
+        function extractDayFromText(text) {
+            if (!text) return null;
+            const lower = text.toLowerCase();
+            if (/\b(hoje|meu\s+dia)\b/.test(lower)) return 'hoje';
+            if (/\b(amanhã|amanha)\b/.test(lower)) {
+                const days = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
+                const today = new Date().getDay();
+                return days[(today + 1) % 7];
+            }
+            if (/\b(dom|domingo)\b/.test(lower)) return 'domingo';
+            if (/\b(seg|segunda(-feira)?)\b/.test(lower)) return 'segunda';
+            if (/\b(ter|terça|terca(-feira)?)\b/.test(lower)) return 'terca';
+            if (/\b(qua|quarta(-feira)?)\b/.test(lower)) return 'quarta';
+            if (/\b(qui|quinta(-feira)?)\b/.test(lower)) return 'quinta';
+            if (/\b(sex|sexta(-feira)?)\b/.test(lower)) return 'sexta';
+            if (/\b(sáb|sab|sábado|sabado)\b/.test(lower)) return 'sabado';
+            return null;
+        }
+
+        async function processPdfFile(file) {
+            if (!file || !file.type.includes('pdf') && !file.name.toLowerCase().endsWith('.pdf')) {
+                alert('Por favor, selecione um arquivo no formato PDF.');
+                return;
+            }
+
+            pdfModalFilename.textContent = file.name || 'Tarefas do Microsoft To Do';
+            showToast('Lendo PDF do Microsoft To Do...');
+
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                if (!window.pdfjsLib) {
+                    throw new Error('Biblioteca PDF.js não carregada');
+                }
+
+                const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+                const pdf = await loadingTask.promise;
+                const pagesLines = [];
+
+                for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                    const page = await pdf.getPage(pageNum);
+                    const textContent = await page.getTextContent();
+                    const viewport = page.getViewport({ scale: 1.0 });
+                    const pageHeight = viewport.height;
+
+                    const items = textContent.items.filter(item => item.str && item.str.trim().length > 0);
+                    // Ordena do topo para a base da página
+                    items.sort((a, b) => b.transform[5] - a.transform[5]);
+
+                    const lineGroups = [];
+                    for (const item of items) {
+                        const y = item.transform[5];
+                        const x = item.transform[4];
+                        const fontSize = Math.hypot(item.transform[0], item.transform[1]);
+
+                        const existing = lineGroups.find(l => Math.abs(l.y - y) <= 4);
+                        if (existing) {
+                            existing.items.push({ str: item.str, x, y, fontSize, width: item.width || 0 });
+                        } else {
+                            lineGroups.push({ y, items: [{ str: item.str, x, y, fontSize, width: item.width || 0 }] });
+                        }
+                    }
+
+                    for (const line of lineGroups) {
+                        line.items.sort((a, b) => a.x - b.x);
+
+                        let fullText = '';
+                        const minX = line.items[0].x;
+                        for (let i = 0; i < line.items.length; i++) {
+                            const cur = line.items[i];
+                            if (i === 0) {
+                                fullText = cur.str;
+                            } else {
+                                const prev = line.items[i - 1];
+                                const gap = cur.x - (prev.x + prev.width);
+                                if (gap > 2 && !fullText.endsWith(' ') && !cur.str.startsWith(' ')) {
+                                    fullText += ' ' + cur.str;
+                                } else {
+                                    fullText += cur.str;
+                                }
+                            }
+                        }
+
+                        fullText = fullText.trim();
+                        if (!fullText) continue;
+
+                        // Descartar cabeçalho do Microsoft To Do (título da lista e data do topo)
+                        const isHeader = (line.y > pageHeight * 0.88) && (
+                            /^tarefas\b/i.test(fullText) ||
+                            /\b(segunda|terça|terca|quarta|quinta|sexta|sábado|sabado|domingo)-feira\b/i.test(fullText) ||
+                            /\d{1,2}\s+de\s+[a-zç]+\s+de\s+\d{4}/i.test(fullText)
+                        );
+                        if (isHeader) continue;
+
+                        // Descartar rodapé ("Impressa com o Microsoft To Do 1/3")
+                        const isFooter = (line.y < pageHeight * 0.09) || (
+                            /Impressa com o Microsoft To Do/i.test(fullText) ||
+                            /Microsoft To Do\s+\d+\/\d+/i.test(fullText)
+                        );
+                        if (isFooter) continue;
+
+                        pagesLines.push({
+                            text: fullText,
+                            x: minX,
+                            y: line.y,
+                            page: pageNum,
+                            fontSize: line.items[0].fontSize
+                        });
+                    }
+                }
+
+                parsedPdfTasks = parseToDoLines(pagesLines);
+
+                if (parsedPdfTasks.length === 0) {
+                    alert('Nenhuma tarefa foi identificada no PDF. Verifique se é uma lista impressa do Microsoft To Do.');
+                    return;
+                }
+
+                openPdfImportModal();
+            } catch (err) {
+                console.error('Erro ao ler PDF:', err);
+                alert('Erro ao processar o arquivo PDF: ' + (err.message || 'Verifique o formato do arquivo.'));
+            }
+        }
+
+        function parseToDoLines(lines) {
+            const tasks = [];
+            let currentTask = null;
+            let expectedSubtasks = 0;
+            let currentSubtask = null;
+
+            const xPositions = lines.map(l => l.x).filter(x => x > 50 && x < 200);
+            let minX = 100;
+            if (xPositions.length > 0) {
+                minX = Math.min(...xPositions);
+            }
+
+            const isMetadata = (text) => {
+                if (/^(\d+\s+de\s+\d+|Meu Dia|Hoje|Amanhã|Amanha|Ontem)/i.test(text)) return true;
+                if (/\b(0|\d+)\s+de\s+\d+\b/i.test(text)) return true;
+                if (/\bMeu Dia\b/i.test(text)) return true;
+                if (/^(\w{3},\s*\d+\s+de\s+\w{3})$/i.test(text)) return true;
+                if (/^(Hoje|Amanhã|Amanha)$/i.test(text)) return true;
+                return false;
+            };
+
+            const isSubtaskMarker = (text, x) => {
+                if (/^[þK○◯•\-\*]\s+/i.test(text) || /^þ/i.test(text)) return true;
+                if (x > minX + 18) return true;
+                return false;
+            };
+
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                let text = line.text;
+
+                // Metadados (data ou contagem de subtarefas)
+                if (isMetadata(text)) {
+                    const day = extractDayFromText(text);
+                    if (day && currentTask && !currentTask.days.includes(day)) {
+                        currentTask.days.push(day);
+                    }
+                    const countMatch = text.match(/(\d+)\s+de\s+(\d+)/i);
+                    if (countMatch) {
+                        expectedSubtasks = parseInt(countMatch[2], 10);
+                    }
+                    continue;
+                }
+
+                // Subtarefa
+                const isSub = isSubtaskMarker(text, line.x);
+
+                if (isSub || expectedSubtasks > 0) {
+                    const cleaned = text.replace(/^[þK○◯•\-\*]\s*/, '').trim();
+
+                    // Nova subtarefa vs continuação multilinha
+                    const isNewSubtask = /^[þK○◯•\-\*]/.test(text) || !currentSubtask || (expectedSubtasks > 0 && /^[A-Z0-9]/.test(cleaned) && cleaned.length > 3 && !/^(obs|e se|dados|passando|abaixo|da bandeira)/i.test(cleaned));
+
+                    if (isNewSubtask) {
+                        if (currentTask) {
+                            currentSubtask = {
+                                text: cleaned,
+                                x: line.x,
+                                days: [...currentTask.days]
+                            };
+                            currentTask.subtasks.push(currentSubtask);
+                            if (expectedSubtasks > 0) expectedSubtasks--;
+                            continue;
+                        }
+                    } else if (currentSubtask) {
+                        // Continuação de linha
+                        currentSubtask.text += ' ' + cleaned;
+                        continue;
+                    }
+                }
+
+                // Tarefa principal
+                const cleaned = text.replace(/^[þK○◯•\-\*]\s*/, '').trim();
+                if (!cleaned) continue;
+
+                // Não extrair dia do texto da tarefa principal a menos que seja data clara
+                currentTask = {
+                    id: genId(),
+                    text: cleaned,
+                    days: [],
+                    subtasks: []
+                };
+                tasks.push(currentTask);
+                currentSubtask = null;
+                expectedSubtasks = 0;
+            }
+
+            return tasks;
+        }
+
+        function openPdfImportModal() {
+            selectedPreviewKeys.clear();
+
+            // Pré-selecionar todas as tarefas e subtarefas
+            parsedPdfTasks.forEach((task, tIdx) => {
+                selectedPreviewKeys.add(`main_${tIdx}`);
+                task.subtasks.forEach((_, sIdx) => {
+                    selectedPreviewKeys.add(`sub_${tIdx}_${sIdx}`);
+                });
+            });
+
+            updatePdfStats();
+            renderPdfPreview();
+            pdfModalOverlay.classList.add('open');
+        }
+
+        function closePdfImportModal() {
+            pdfModalOverlay.classList.remove('open');
+            if (pdfFileInput) pdfFileInput.value = '';
+        }
+
+        function updatePdfStats() {
+            let totalMain = parsedPdfTasks.length;
+            let totalSub = 0;
+            let totalWithDays = 0;
+
+            parsedPdfTasks.forEach(t => {
+                totalSub += t.subtasks.length;
+                if (t.days.length > 0) totalWithDays++;
+            });
+
+            document.getElementById('stat-pill-total').textContent = `${totalMain + totalSub} itens encontrados`;
+            document.getElementById('stat-pill-main').textContent = `${totalMain} principais`;
+            document.getElementById('stat-pill-sub').textContent = `${totalSub} subtarefas`;
+            document.getElementById('stat-pill-days').textContent = `${totalWithDays} com data`;
+        }
+
+        function renderPdfPreview() {
+            pdfPreviewList.innerHTML = '';
+            const includeSubtasks = pdfOptIncludeSubtasks.checked;
+            const subtaskFormat = pdfOptSubtaskFormat.value;
+            const applyDays = pdfOptApplyDays.checked;
+
+            let renderedCount = 0;
+
+            parsedPdfTasks.forEach((task, tIdx) => {
+                const mainKey = `main_${tIdx}`;
+                const isMainSelected = selectedPreviewKeys.has(mainKey);
+
+                // Card da tarefa principal
+                const mainItem = document.createElement('div');
+                mainItem.className = 'pdf-preview-item';
+
+                const mainCheck = document.createElement('input');
+                mainCheck.type = 'checkbox';
+                mainCheck.checked = isMainSelected;
+                mainCheck.addEventListener('change', () => {
+                    if (mainCheck.checked) selectedPreviewKeys.add(mainKey);
+                    else selectedPreviewKeys.delete(mainKey);
+                    updatePreviewSelectedCount();
+                });
+
+                const mainText = document.createElement('div');
+                mainText.className = 'pdf-preview-text';
+                mainText.textContent = task.text;
+
+                mainItem.appendChild(mainCheck);
+                mainItem.appendChild(mainText);
+
+                if (applyDays && task.days.length > 0) {
+                    task.days.forEach(d => {
+                        const cfg = DAY_CONFIG[d];
+                        if (cfg) {
+                            const badge = document.createElement('span');
+                            badge.className = 'pdf-preview-day';
+                            badge.style.background = cfg.bg;
+                            badge.style.color = cfg.color;
+                            badge.textContent = cfg.label;
+                            mainItem.appendChild(badge);
+                        }
+                    });
+                }
+
+                pdfPreviewList.appendChild(mainItem);
+                renderedCount++;
+
+                // Subtarefas
+                if (includeSubtasks && task.subtasks.length > 0) {
+                    task.subtasks.forEach((sub, sIdx) => {
+                        const subKey = `sub_${tIdx}_${sIdx}`;
+                        const isSubSelected = selectedPreviewKeys.has(subKey);
+
+                        const subItem = document.createElement('div');
+                        subItem.className = 'pdf-preview-item subtask-item';
+
+                        const subCheck = document.createElement('input');
+                        subCheck.type = 'checkbox';
+                        subCheck.checked = isSubSelected;
+                        subCheck.addEventListener('change', () => {
+                            if (subCheck.checked) selectedPreviewKeys.add(subKey);
+                            else selectedPreviewKeys.delete(subKey);
+                            updatePreviewSelectedCount();
+                        });
+
+                        let formattedText = sub.text;
+                        if (subtaskFormat === 'prefix_parent') {
+                            formattedText = `[${task.text}] ${sub.text}`;
+                        } else if (subtaskFormat === 'arrow') {
+                            formattedText = `↳ ${sub.text}`;
+                        }
+
+                        const subText = document.createElement('div');
+                        subText.className = 'pdf-preview-text';
+                        subText.textContent = formattedText;
+
+                        subItem.appendChild(subCheck);
+                        subItem.appendChild(subText);
+
+                        if (applyDays && sub.days.length > 0) {
+                            sub.days.forEach(d => {
+                                const cfg = DAY_CONFIG[d];
+                                if (cfg) {
+                                    const badge = document.createElement('span');
+                                    badge.className = 'pdf-preview-day';
+                                    badge.style.background = cfg.bg;
+                                    badge.style.color = cfg.color;
+                                    badge.textContent = cfg.label;
+                                    subItem.appendChild(badge);
+                                }
+                            });
+                        }
+
+                        pdfPreviewList.appendChild(subItem);
+                        renderedCount++;
+                    });
+                }
+            });
+
+            updatePreviewSelectedCount();
+        }
+
+        function updatePreviewSelectedCount() {
+            const count = selectedPreviewKeys.size;
+            document.getElementById('pdf-preview-count').textContent = `Pré-visualização (${count} selecionadas):`;
+            pdfBtnConfirm.textContent = `Importar (${count}) para o Inbox`;
+            btnToggleSelectAll.textContent = count > 0 ? 'Desmarcar todas' : 'Selecionar todas';
+        }
+
+        // Eventos do modal de PDF
+        btnImportPdf.addEventListener('click', () => {
+            pdfFileInput.click();
+        });
+
+        pdfFileInput.addEventListener('change', (e) => {
+            const file = e.target.files && e.target.files[0];
+            if (file) {
+                processPdfFile(file);
+            }
+        });
+
+        pdfModalClose.addEventListener('click', closePdfImportModal);
+        pdfBtnCancel.addEventListener('click', closePdfImportModal);
+        pdfModalOverlay.addEventListener('click', (e) => {
+            if (e.target === pdfModalOverlay) closePdfImportModal();
+        });
+
+        pdfOptIncludeSubtasks.addEventListener('change', () => {
+            pdfOptSubtaskFormat.disabled = !pdfOptIncludeSubtasks.checked;
+            renderPdfPreview();
+        });
+
+        pdfOptSubtaskFormat.addEventListener('change', renderPdfPreview);
+        pdfOptApplyDays.addEventListener('change', renderPdfPreview);
+
+        btnToggleSelectAll.addEventListener('click', () => {
+            const shouldSelectAll = selectedPreviewKeys.size === 0;
+            selectedPreviewKeys.clear();
+            if (shouldSelectAll) {
+                parsedPdfTasks.forEach((task, tIdx) => {
+                    selectedPreviewKeys.add(`main_${tIdx}`);
+                    if (pdfOptIncludeSubtasks.checked) {
+                        task.subtasks.forEach((_, sIdx) => {
+                            selectedPreviewKeys.add(`sub_${tIdx}_${sIdx}`);
+                        });
+                    }
+                });
+            }
+            renderPdfPreview();
+        });
+
+        pdfBtnConfirm.addEventListener('click', () => {
+            if (selectedPreviewKeys.size === 0) {
+                alert('Selecione pelo menos uma tarefa para importar.');
+                return;
+            }
+
+            const includeSubtasks = pdfOptIncludeSubtasks.checked;
+            const subtaskFormat = pdfOptSubtaskFormat.value;
+            const applyDays = pdfOptApplyDays.checked;
+            let importedCount = 0;
+
+            parsedPdfTasks.forEach((task, tIdx) => {
+                const mainKey = `main_${tIdx}`;
+                if (selectedPreviewKeys.has(mainKey)) {
+                    const newTask = createTask(task.text);
+                    if (applyDays && task.days.length > 0) {
+                        newTask.days = [...task.days];
+                    }
+                    state.inbox.push(newTask);
+                    importedCount++;
+                }
+
+                if (includeSubtasks && task.subtasks.length > 0) {
+                    task.subtasks.forEach((sub, sIdx) => {
+                        const subKey = `sub_${tIdx}_${sIdx}`;
+                        if (selectedPreviewKeys.has(subKey)) {
+                            let text = sub.text;
+                            if (subtaskFormat === 'prefix_parent') {
+                                text = `[${task.text}] ${sub.text}`;
+                            } else if (subtaskFormat === 'arrow') {
+                                text = `↳ ${sub.text}`;
+                            }
+                            const newSubtask = createTask(text);
+                            if (applyDays && sub.days.length > 0) {
+                                newSubtask.days = [...sub.days];
+                            }
+                            state.inbox.push(newSubtask);
+                            importedCount++;
+                        }
+                    });
+                }
+            });
+
+            saveState();
+            renderAll();
+            closePdfImportModal();
+            showToast(`✓ ${importedCount} tarefas importadas com sucesso para o Inbox!`);
+        });
+
+        // ===========================
+        // WINDOW DRAG & DROP FOR PDF
+        // ===========================
+        let dragCounter = 0;
+
+        window.addEventListener('dragenter', (e) => {
+            if (e.dataTransfer && e.dataTransfer.types && e.dataTransfer.types.includes('Files')) {
+                dragCounter++;
+                pdfDropOverlay.classList.add('active');
+            }
+        });
+
+        window.addEventListener('dragleave', () => {
+            dragCounter--;
+            if (dragCounter <= 0) {
+                dragCounter = 0;
+                pdfDropOverlay.classList.remove('active');
+            }
+        });
+
+        window.addEventListener('dragover', (e) => {
+            if (e.dataTransfer && e.dataTransfer.types && e.dataTransfer.types.includes('Files')) {
+                e.preventDefault();
+            }
+        });
+
+        window.addEventListener('drop', (e) => {
+            dragCounter = 0;
+            pdfDropOverlay.classList.remove('active');
+
+            if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                const file = e.dataTransfer.files[0];
+                if (file.type.includes('pdf') || file.name.toLowerCase().endsWith('.pdf')) {
+                    e.preventDefault();
+                    processPdfFile(file);
+                }
+            }
+        });
+
+        // ===========================
+        // INIT
+        // ===========================
+        function init() {
+            initTheme();
+
+            const loaded = loadState();
+            if (!loaded) {
+                // Initialize with default blocks
+                state.blocks = DEFAULT_BLOCKS;
+            }
+
+            // Update nextColorIndex based on existing blocks
+            if (state.blocks.length > 0) {
+                nextColorIndex = state.blocks.length;
+            }
+
+            renderAll();
+            inboxInput.focus();
+        }
+
+        init();
+    </script>
+</body>
+</html>
