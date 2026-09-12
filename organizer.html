@@ -325,19 +325,18 @@
         /* ========== BLOCKS PANEL (LEFT) ========== */
         .blocks-panel {
             flex: 1;
-            display: flex;
-            flex-wrap: wrap;
-            align-content: flex-start;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 16px;
             padding: 20px;
             overflow-y: auto;
+            align-content: start;
             min-width: 0;
         }
 
         .block-card {
-            flex: 1 1 calc(50% - 8px);
-            min-width: 280px;
-            max-height: 500px;
+            width: 100%;
+            min-width: 0;
             display: flex;
             flex-direction: column;
             background: var(--glass-bg);
@@ -534,9 +533,9 @@
 
         /* Add Block Card */
         .add-block-card {
-            flex: 1 1 calc(50% - 8px);
-            min-width: 280px;
-            min-height: 120px;
+            grid-column: 1 / -1;
+            width: 100%;
+            min-height: 80px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -1412,15 +1411,13 @@
             }
 
             .blocks-panel {
-                flex-direction: column;
-                flex-wrap: nowrap;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
             }
+        }
 
-            .block-card,
-            .add-block-card {
-                flex: none;
-                min-width: 0;
-                width: 100%;
+        @media (max-width: 580px) {
+            .blocks-panel {
+                grid-template-columns: 1fr;
             }
         }
 
