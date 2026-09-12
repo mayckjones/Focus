@@ -564,8 +564,8 @@
 
         /* ========== INBOX PANEL (RIGHT) ========== */
         .inbox-panel {
-            width: 340px;
-            min-width: 300px;
+            width: 450px;
+            min-width: 380px;
             border-left: 1px solid var(--border-light);
             background: var(--surface);
             display: flex;
@@ -1788,11 +1788,6 @@
                         <input type="checkbox" id="pdf-opt-include-subtasks" checked>
                         <span>Incluir subtarefas</span>
                     </label>
-                    <select class="pdf-subtask-select" id="pdf-opt-subtask-format">
-                        <option value="prefix_parent">[Tarefa] Subtarefa</option>
-                        <option value="arrow" selected>↳ Subtarefa</option>
-                        <option value="plain">Apenas subtarefa</option>
-                    </select>
                 </div>
                 <div class="pdf-config-row">
                     <label class="pdf-config-label">
@@ -2802,14 +2797,9 @@
         function parseToDoLines(lines) {
             const tasks = [];
             let currentTask = null;
-            let expectedSubtasks = 0;
-            let currentSubtask = null;
-
-            const xPositions = lines.map(l => l.x).filter(x => x > 50 && x < 200);
-            let minX = 100;
-            if (xPositions.length > 0) {
-                minX = Math.min(...xPositions);
-            }
+            let lastItem = null;
+            let nextLineForceMainTask = false;
+            let nextLineForceSubtask = false;
 
             const isMetadata = (text) => {
                 if (/^(\d+\s+de\s+\d+|Meu Dia|Hoje|Amanhã|Amanha|Ontem)/i.test(text)) return true;
@@ -2820,70 +2810,78 @@
                 return false;
             };
 
-            const isSubtaskMarker = (text, x) => {
-                if (/^[þK○◯•\-\*]\s+/i.test(text) || /^þ/i.test(text)) return true;
-                if (x > minX + 18) return true;
-                return false;
-            };
-
             for (let i = 0; i < lines.length; i++) {
                 const line = lines[i];
-                let text = line.text;
+                let text = line.text.trim();
 
-                // Metadados (data ou contagem de subtarefas)
+                // Standalone markers
+                if (/^[K○◯O]$/i.test(text)) {
+                    nextLineForceMainTask = true;
+                    continue;
+                }
+
+                if (/^[þ•\-\*]$/i.test(text)) {
+                    nextLineForceSubtask = true;
+                    continue;
+                }
+
+                // Metadata
                 if (isMetadata(text)) {
                     const day = extractDayFromText(text);
                     if (day && currentTask && !currentTask.days.includes(day)) {
                         currentTask.days.push(day);
                     }
-                    const countMatch = text.match(/(\d+)\s+de\s+(\d+)/i);
-                    if (countMatch) {
-                        expectedSubtasks = parseInt(countMatch[2], 10);
-                    }
                     continue;
                 }
 
-                // Subtarefa
-                const isSub = isSubtaskMarker(text, line.x);
-
-                if (isSub || expectedSubtasks > 0) {
-                    const cleaned = text.replace(/^[þK○◯•\-\*]\s*/, '').trim();
-
-                    // Nova subtarefa vs continuação multilinha
-                    const isNewSubtask = /^[þK○◯•\-\*]/.test(text) || !currentSubtask || (expectedSubtasks > 0 && /^[A-Z0-9]/.test(cleaned) && cleaned.length > 3 && !/^(obs|e se|dados|passando|abaixo|da bandeira)/i.test(cleaned));
-
-                    if (isNewSubtask) {
-                        if (currentTask) {
-                            currentSubtask = {
-                                text: cleaned,
-                                x: line.x,
-                                days: [...currentTask.days]
-                            };
-                            currentTask.subtasks.push(currentSubtask);
-                            if (expectedSubtasks > 0) expectedSubtasks--;
-                            continue;
-                        }
-                    } else if (currentSubtask) {
-                        // Continuação de linha
-                        currentSubtask.text += ' ' + cleaned;
-                        continue;
-                    }
-                }
-
-                // Tarefa principal
-                const cleaned = text.replace(/^[þK○◯•\-\*]\s*/, '').trim();
+                const cleaned = text.replace(/^[þK○◯O•\-\*]\s*/i, '').trim();
                 if (!cleaned) continue;
 
-                // Não extrair dia do texto da tarefa principal a menos que seja data clara
-                currentTask = {
-                    id: genId(),
-                    text: cleaned,
-                    days: [],
-                    subtasks: []
-                };
-                tasks.push(currentTask);
-                currentSubtask = null;
-                expectedSubtasks = 0;
+                const hasSubMarker = /^[þ•\-\*]\s+/i.test(text);
+                const hasMainMarker = /^[K○◯O]\s+/i.test(text);
+
+                if (nextLineForceMainTask || hasMainMarker) {
+                    currentTask = {
+                        id: genId(),
+                        text: cleaned,
+                        completed: false,
+                        days: [],
+                        subtasks: []
+                    };
+                    tasks.push(currentTask);
+                    lastItem = currentTask;
+                    nextLineForceMainTask = false;
+                } 
+                else if (nextLineForceSubtask || hasSubMarker) {
+                    if (currentTask) {
+                        const subtask = {
+                            id: genId(),
+                            text: cleaned,
+                            days: [...currentTask.days],
+                            completed: false
+                        };
+                        currentTask.subtasks.push(subtask);
+                        lastItem = subtask;
+                    }
+                    nextLineForceSubtask = false;
+                } 
+                else {
+                    // Continuation of the last item
+                    if (lastItem) {
+                        lastItem.text += ' ' + cleaned;
+                    } else {
+                        // Fallback
+                        currentTask = {
+                            id: genId(),
+                            text: cleaned,
+                            completed: false,
+                            days: [],
+                            subtasks: []
+                        };
+                        tasks.push(currentTask);
+                        lastItem = currentTask;
+                    }
+                }
             }
 
             return tasks;
@@ -2929,7 +2927,6 @@
         function renderPdfPreview() {
             pdfPreviewList.innerHTML = '';
             const includeSubtasks = pdfOptIncludeSubtasks.checked;
-            const subtaskFormat = pdfOptSubtaskFormat.value;
             const applyDays = pdfOptApplyDays.checked;
 
             let renderedCount = 0;
@@ -2994,15 +2991,10 @@
                         });
 
                         let formattedText = sub.text;
-                        if (subtaskFormat === 'prefix_parent') {
-                            formattedText = `[${task.text}] ${sub.text}`;
-                        } else if (subtaskFormat === 'arrow') {
-                            formattedText = `↳ ${sub.text}`;
-                        }
 
                         const subText = document.createElement('div');
                         subText.className = 'pdf-preview-text';
-                        subText.textContent = formattedText;
+                        subText.innerHTML = `↳ ${formattedText}`;
 
                         subItem.appendChild(subCheck);
                         subItem.appendChild(subText);
@@ -3056,11 +3048,9 @@
         });
 
         pdfOptIncludeSubtasks.addEventListener('change', () => {
-            pdfOptSubtaskFormat.disabled = !pdfOptIncludeSubtasks.checked;
             renderPdfPreview();
         });
 
-        pdfOptSubtaskFormat.addEventListener('change', renderPdfPreview);
         pdfOptApplyDays.addEventListener('change', renderPdfPreview);
 
         btnToggleSelectAll.addEventListener('click', () => {
@@ -3086,39 +3076,46 @@
             }
 
             const includeSubtasks = pdfOptIncludeSubtasks.checked;
-            const subtaskFormat = pdfOptSubtaskFormat.value;
             const applyDays = pdfOptApplyDays.checked;
             let importedCount = 0;
 
             parsedPdfTasks.forEach((task, tIdx) => {
                 const mainKey = `main_${tIdx}`;
+                
                 if (selectedPreviewKeys.has(mainKey)) {
                     const newTask = createTask(task.text);
                     if (applyDays && task.days.length > 0) {
                         newTask.days = [...task.days];
                     }
+                    
+                    if (includeSubtasks && task.subtasks.length > 0) {
+                        task.subtasks.forEach((sub, sIdx) => {
+                            const subKey = `sub_${tIdx}_${sIdx}`;
+                            if (selectedPreviewKeys.has(subKey)) {
+                                newTask.subtasks.push({
+                                    id: genId(),
+                                    text: sub.text,
+                                    completed: false
+                                });
+                            }
+                        });
+                    }
                     state.inbox.push(newTask);
                     importedCount++;
-                }
-
-                if (includeSubtasks && task.subtasks.length > 0) {
-                    task.subtasks.forEach((sub, sIdx) => {
-                        const subKey = `sub_${tIdx}_${sIdx}`;
-                        if (selectedPreviewKeys.has(subKey)) {
-                            let text = sub.text;
-                            if (subtaskFormat === 'prefix_parent') {
-                                text = `[${task.text}] ${sub.text}`;
-                            } else if (subtaskFormat === 'arrow') {
-                                text = `↳ ${sub.text}`;
+                } else {
+                    if (includeSubtasks && task.subtasks.length > 0) {
+                        task.subtasks.forEach((sub, sIdx) => {
+                            const subKey = `sub_${tIdx}_${sIdx}`;
+                            if (selectedPreviewKeys.has(subKey)) {
+                                const newSubtask = createTask(sub.text);
+                                if (applyDays && sub.days.length > 0) {
+                                    newSubtask.days = [...sub.days];
+                                }
+                                state.inbox.push(newSubtask);
+                                importedCount++;
                             }
-                            const newSubtask = createTask(text);
-                            if (applyDays && sub.days.length > 0) {
-                                newSubtask.days = [...sub.days];
-                            }
-                            state.inbox.push(newSubtask);
-                            importedCount++;
-                        }
-                    });
+                        });
+                    }
                 }
             });
 
