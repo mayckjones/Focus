@@ -2383,6 +2383,32 @@
             });
         }
 
+        function getDateForKey(key) {
+            let d = new Date();
+            if (key === 'hoje') {
+                // today
+            } else if (key === 'amanha') {
+                d.setDate(d.getDate() + 1);
+            } else {
+                const daysMap = { domingo: 0, segunda: 1, terca: 2, quarta: 3, quinta: 4, sexta: 5, sabado: 6 };
+                const targetDay = daysMap[key];
+                if (targetDay !== undefined) {
+                    const currentDay = d.getDay();
+                    let diff = targetDay - currentDay;
+                    if (diff <= 0) {
+                        diff += 7;
+                    }
+                    d.setDate(d.getDate() + diff);
+                } else {
+                    return null;
+                }
+            }
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const dateStr = String(d.getDate()).padStart(2, '0');
+            return `${y}-${m}-${dateStr}`;
+        }
+
         function toggleDayPicker(task, card) {
             // Close any existing picker
             document.querySelectorAll('.day-picker.open').forEach(p => p.remove());
@@ -2397,10 +2423,14 @@
                 item.innerHTML = `<span class="picker-dot" style="background:${isActive ? cfg.color : 'var(--border)'}"></span>${cfg.label}${isActive ? ' ✓' : ''}`;
                 item.addEventListener('click', (e) => {
                     e.stopPropagation();
+                    const exactDate = getDateForKey(key);
                     if (task.days.includes(key)) {
                         task.days = task.days.filter(d => d !== key);
+                        if (exactDate) task.days = task.days.filter(d => d !== exactDate);
                     } else {
                         task.days.push(key);
+                        task.days = task.days.filter(d => !d.match(/^\d{4}-\d{2}-\d{2}$/)); // clear old exact dates
+                        if (exactDate) task.days.push(exactDate); // push the new exact date
                     }
                     saveState();
                     picker.remove();
