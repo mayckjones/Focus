@@ -392,6 +392,82 @@
             gap: 4px;
         }
 
+        /* Subtarefas no Foco */
+        .focus-subtasks {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 24px;
+            text-align: left;
+            width: 100%;
+        }
+
+        .focus-subtask-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 10px 14px;
+            background: rgba(0, 0, 0, 0.03);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        [data-theme="dark"] .focus-subtask-item {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .focus-subtask-item:hover {
+            background: rgba(0, 0, 0, 0.06);
+        }
+
+        [data-theme="dark"] .focus-subtask-item:hover {
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .focus-subtask-checkbox {
+            width: 18px;
+            height: 18px;
+            border: 2px solid var(--text-tertiary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            margin-top: 1px;
+            flex-shrink: 0;
+        }
+
+        .focus-subtask-item.completed .focus-subtask-checkbox {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .focus-subtask-checkbox svg {
+            width: 10px;
+            height: 10px;
+            color: white;
+            opacity: 0;
+            transition: all 0.2s;
+        }
+
+        .focus-subtask-item.completed .focus-subtask-checkbox svg {
+            opacity: 1;
+        }
+
+        .focus-subtask-text {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.4;
+            transition: all 0.2s;
+            word-break: break-word;
+        }
+
+        .focus-subtask-item.completed .focus-subtask-text {
+            text-decoration: line-through;
+            opacity: 0.6;
+        }
+
         /* Responsive */
         @media (max-width: 480px) {
             .container {
@@ -469,6 +545,7 @@
             
             <div class="task-display">
                 <h2 class="task-text" id="current-task"></h2>
+                <div id="focus-subtasks" class="focus-subtasks"></div>
             </div>
 
             <div class="button-group button-group-half" style="margin-bottom: 12px;">
@@ -606,7 +683,8 @@
             updateBlockBadge();
         }
 
-        function syncTaskCompletedWithOrganizer(taskText, targetBlockId) {
+        function syncTaskStateWithOrganizer(taskObj, targetBlockId, completeMainTask = true) {
+            if (!taskObj || !taskObj.id) return;
             try {
                 const orgData = localStorage.getItem('focusOrganizerState');
                 if (!orgData) return;
@@ -617,8 +695,9 @@
                 for (const b of orgState.blocks) {
                     if (targetBlockId && b.id !== targetBlockId) continue;
                     for (const t of b.tasks) {
-                        if (t.text === taskText && !t.completed) {
-                            t.completed = true;
+                        if (t.id === taskObj.id) {
+                            if (completeMainTask) t.completed = true;
+                            t.subtasks = taskObj.subtasks || [];
                             updated = true;
                             break;
                         }
@@ -657,31 +736,63 @@
         function updateFocusView(animate = true) {
             const total = tasks.length;
             const current = currentIndex + 1;
+            const currentTask = tasks[currentIndex];
+            const isObj = typeof currentTask === 'object' && currentTask !== null;
+            const text = isObj ? currentTask.text : currentTask;
+            const subtasks = isObj && currentTask.subtasks ? currentTask.subtasks : [];
             
             btnPrev.disabled = currentIndex === 0;
+
+            const renderContent = () => {
+                currentTaskEl.textContent = text;
+                progressText.textContent = `Tarefa ${current} de ${total}`;
+                
+                const percentage = ((current - 1) / total) * 100;
+                progressBar.style.width = `${percentage}%`;
+
+                const subtasksContainer = document.getElementById('focus-subtasks');
+                subtasksContainer.innerHTML = '';
+                if (subtasks.length > 0) {
+                    subtasks.forEach(st => {
+                        const stEl = document.createElement('div');
+                        stEl.className = 'focus-subtask-item' + (st.completed ? ' completed' : '');
+                        stEl.innerHTML = `
+                            <div class="focus-subtask-checkbox">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            </div>
+                            <div class="focus-subtask-text">${st.text}</div>
+                        `;
+                        stEl.addEventListener('click', () => {
+                            st.completed = !st.completed;
+                            stEl.classList.toggle('completed', st.completed);
+                            saveState();
+                            if (isObj && currentTask.id) {
+                                syncTaskStateWithOrganizer(currentTask, blockId, false);
+                            }
+                        });
+                        subtasksContainer.appendChild(stEl);
+                    });
+                }
+            };
             
             if (animate) {
                 // Animação de saída
                 currentTaskEl.style.opacity = 0;
                 currentTaskEl.style.transform = 'translateY(10px)';
+                document.getElementById('focus-subtasks').style.opacity = 0;
                 
                 setTimeout(() => {
-                    // Atualiza o conteúdo
-                    currentTaskEl.textContent = tasks[currentIndex];
-                    progressText.textContent = `Tarefa ${current} de ${total}`;
-                    
-                    const percentage = ((current - 1) / total) * 100;
-                    progressBar.style.width = `${percentage}%`;
-
+                    renderContent();
                     // Animação de entrada
                     currentTaskEl.style.opacity = 1;
                     currentTaskEl.style.transform = 'translateY(0)';
+                    document.getElementById('focus-subtasks').style.opacity = 1;
                 }, 300);
             } else {
-                currentTaskEl.textContent = tasks[currentIndex];
-                progressText.textContent = `Tarefa ${current} de ${total}`;
+                renderContent();
                 currentTaskEl.style.opacity = 1;
                 currentTaskEl.style.transform = 'translateY(0)';
+                document.getElementById('focus-subtasks').style.opacity = 1;
             }
         }
 
@@ -812,7 +923,7 @@
 
         btnStart.addEventListener('click', () => {
             const lines = taskInput.value.split('\n');
-            tasks = lines.map(t => t.trim()).filter(t => t.length > 0);
+            tasks = lines.map(t => t.trim()).filter(t => t.length > 0).map(t => ({ id: null, text: t, subtasks: [] }));
             
             if (tasks.length === 0) {
                 alert('Por favor, adicione pelo menos uma tarefa para iniciar o Modo Foco.');
@@ -842,8 +953,11 @@
 
         btnComplete.addEventListener('click', () => {
             if (currentIndex < tasks.length) {
-                const finishedText = tasks[currentIndex];
-                syncTaskCompletedWithOrganizer(finishedText, blockId);
+                const currentTask = tasks[currentIndex];
+                const isObj = typeof currentTask === 'object' && currentTask !== null;
+                if (isObj) {
+                    syncTaskStateWithOrganizer(currentTask, blockId, true);
+                }
             }
 
             currentIndex++;
