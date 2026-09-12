@@ -724,7 +724,7 @@
             border: 1px solid var(--border-light);
             border-radius: var(--radius-sm);
             cursor: grab;
-            transition: all var(--transition);
+            transition: border-color var(--transition), box-shadow var(--transition), background var(--transition);
             position: relative;
             user-select: none;
             animation: fadeSlideIn 0.25s ease;
@@ -1657,6 +1657,46 @@
             };
         }
 
+        function getDragAfterElement(container, y) {
+            const draggableElements = [...container.querySelectorAll('.task-card:not(.dragging):not(.hidden-by-filter)')];
+            
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset: offset, element: child };
+                } else {
+                    return closest;
+                }
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+
+        function rebuildStateFromDOM() {
+            const allTasks = new Map();
+            state.inbox.forEach(t => allTasks.set(t.id, t));
+            state.blocks.forEach(b => b.tasks.forEach(t => allTasks.set(t.id, t)));
+
+            const inboxTasksEl = document.getElementById('inbox-tasks');
+            if (inboxTasksEl) {
+                state.inbox = Array.from(inboxTasksEl.querySelectorAll('.task-card'))
+                    .map(card => allTasks.get(card.dataset.taskId))
+                    .filter(Boolean);
+            }
+
+            document.querySelectorAll('.block-card').forEach(blockCard => {
+                const blockId = blockCard.dataset.blockId;
+                const block = state.blocks.find(b => b.id === blockId);
+                if (block) {
+                    block.tasks = Array.from(blockCard.querySelectorAll('.task-card'))
+                        .map(card => allTasks.get(card.dataset.taskId))
+                        .filter(Boolean);
+                }
+            });
+
+            saveState();
+            renderAll();
+        }
+
         // ===========================
         // PERSISTENCE
         // ===========================
@@ -1871,6 +1911,7 @@
                 card.style.opacity = '';
                 dragData = null;
                 clearAllDragOver();
+                rebuildStateFromDOM();
             });
 
             return card;
@@ -2085,6 +2126,19 @@
                 e.preventDefault();
                 e.dataTransfer.dropEffect = 'move';
                 card.classList.add('drag-over');
+
+                const container = card.querySelector('.block-tasks');
+                if (container) {
+                    const afterElement = getDragAfterElement(container, e.clientY);
+                    const dragging = document.querySelector('.dragging');
+                    if (dragging) {
+                        if (afterElement == null) {
+                            container.appendChild(dragging);
+                        } else {
+                            container.insertBefore(dragging, afterElement);
+                        }
+                    }
+                }
             });
 
             card.addEventListener('dragleave', (e) => {
@@ -2096,18 +2150,6 @@
             card.addEventListener('drop', (e) => {
                 e.preventDefault();
                 card.classList.remove('drag-over');
-                if (!dragData) return;
-
-                const task = getTaskById(dragData.taskId);
-                if (!task) return;
-
-                // Don't drop onto same block
-                if (dragData.sourceType === 'block' && dragData.sourceBlockId === block.id) return;
-
-                removeTaskFromSource(task.id);
-                block.tasks.push(task);
-                saveState();
-                renderAll();
             });
 
             return card;
@@ -2156,6 +2198,9 @@
             const focusState = {
                 tasks: incompleteTasks.map(t => t.text),
                 currentIndex: 0,
+                blockId: block.id,
+                blockTitle: block.title,
+                fromOrganizer: true
             };
             localStorage.setItem(FOCUS_HANDOFF_KEY, JSON.stringify(focusState));
             window.location.href = 'index.html';
@@ -2220,6 +2265,19 @@
             e.preventDefault();
             e.dataTransfer.dropEffect = 'move';
             inboxPanel.classList.add('drag-over');
+
+            const container = document.getElementById('inbox-tasks');
+            if (container) {
+                const afterElement = getDragAfterElement(container, e.clientY);
+                const dragging = document.querySelector('.dragging');
+                if (dragging) {
+                    if (afterElement == null) {
+                        container.appendChild(dragging);
+                    } else {
+                        container.insertBefore(dragging, afterElement);
+                    }
+                }
+            }
         });
 
         inboxPanel.addEventListener('dragleave', (e) => {
@@ -2231,18 +2289,6 @@
         inboxPanel.addEventListener('drop', (e) => {
             e.preventDefault();
             inboxPanel.classList.remove('drag-over');
-            if (!dragData) return;
-
-            // Don't drop back into inbox if already there
-            if (dragData.sourceType === 'inbox') return;
-
-            const task = getTaskById(dragData.taskId);
-            if (!task) return;
-
-            removeTaskFromSource(task.id);
-            state.inbox.push(task);
-            saveState();
-            renderAll();
         });
 
         // ===========================

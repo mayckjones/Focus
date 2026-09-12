@@ -16,11 +16,37 @@
             --primary-hover: #106EBE;
             --bg-color: #F3F2F1;
             --surface: #FFFFFF;
+            --surface-alt: #F8FAFC;
             --text-main: #201F1E;
             --text-muted: #605E5C;
             --border: #EDEBE9;
+            --border-alt: #D1D5DB;
             --radius: 8px;
             --shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #0F1117;
+            --surface: #1E2130;
+            --surface-alt: #262A3A;
+            --text-main: #E8EAED;
+            --text-muted: #9AA0A6;
+            --border: #2D3348;
+            --border-alt: #3C4257;
+            --shadow: 0 4px 16px rgba(0,0,0,0.3);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root:not([data-theme="light"]) {
+                --bg-color: #0F1117;
+                --surface: #1E2130;
+                --surface-alt: #262A3A;
+                --text-main: #E8EAED;
+                --text-muted: #9AA0A6;
+                --border: #2D3348;
+                --border-alt: #3C4257;
+                --shadow: 0 4px 16px rgba(0,0,0,0.3);
+            }
         }
 
         * {
@@ -46,9 +72,11 @@
             max-width: 600px;
             border-radius: var(--radius);
             box-shadow: var(--shadow);
-            padding: 40px 30px;
+            padding: 30px 30px 40px;
             overflow: hidden;
             position: relative;
+            display: flex;
+            flex-direction: column;
         }
 
         .screen {
@@ -107,6 +135,7 @@
             transition: border-color 0.2s, box-shadow 0.2s;
             line-height: 1.5;
             color: var(--text-main);
+            background-color: var(--surface);
         }
 
         textarea:focus {
@@ -147,8 +176,8 @@
         }
 
         .option-card {
-            background: #F8FAFC;
-            border: 1px solid #D1D5DB;
+            background: var(--surface-alt);
+            border: 1px solid var(--border-alt);
             border-radius: 14px;
             padding: 14px 14px 12px;
             margin-bottom: 16px;
@@ -183,8 +212,8 @@
             font-size: 12px;
             color: var(--text-main);
             padding: 8px 10px;
-            background: #FFFFFF;
-            border: 1px solid #EDEBE9;
+            background: var(--surface);
+            border: 1px solid var(--border);
             border-radius: 10px;
             margin-bottom: 10px;
         }
@@ -292,12 +321,19 @@
             50% { transform: translateY(-10px); }
         }
 
-        .organizer-link {
-            position: absolute;
-            top: 16px;
-            right: 16px;
+        .top-actions {
             display: flex;
             align-items: center;
+            justify-content: flex-end;
+            gap: 8px;
+            z-index: 20;
+            margin-bottom: 16px;
+        }
+
+        .top-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
             gap: 6px;
             padding: 8px 14px;
             border-radius: var(--radius);
@@ -312,15 +348,48 @@
             transition: all 0.2s;
         }
 
-        .organizer-link:hover {
+        .top-btn:hover {
             color: var(--primary);
             border-color: var(--primary);
             box-shadow: 0 2px 8px rgba(0,120,212,0.15);
         }
 
-        .organizer-link svg {
+        .top-btn svg {
             width: 16px;
             height: 16px;
+        }
+
+        .theme-toggle {
+            padding: 8px;
+        }
+
+        .button-group-half {
+            display: flex;
+            gap: 8px;
+            width: 100%;
+        }
+
+        .button-group-half .btn {
+            padding: 12px 6px;
+            font-size: 13.5px;
+            flex: 1;
+            min-width: 0;
+            white-space: nowrap;
+            gap: 5px;
+        }
+
+        .focus-block-badge {
+            font-size: 12px;
+            color: var(--primary);
+            background: rgba(0, 120, 212, 0.08);
+            border: 1px solid rgba(0, 120, 212, 0.2);
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
         }
 
         /* Responsive */
@@ -339,12 +408,20 @@
 
     <div class="container">
         
+        <!-- Ações do topo (Organizador e Tema) -->
+        <div class="top-actions">
+            <button class="top-btn theme-toggle" id="btn-theme-index" title="Alternar tema">
+                <svg id="icon-sun-index" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                <svg id="icon-moon-index" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+            </button>
+            <a href="organizer.html" class="top-btn" id="organizer-top-btn" title="Ir para o Organizador de Tarefas">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect></svg>
+                Organizador
+            </a>
+        </div>
+        
         <!-- Tela 1: Adicionar Tarefas -->
         <div id="screen-add" class="screen active">
-            <a href="organizer.html" class="organizer-link" title="Abrir Organizador de Blocos">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect></svg>
-                Organizar
-            </a>
             <div class="logo-container">
                 <img src="Logo/Grupo.png" alt="Logo principal" class="logo">
             </div>
@@ -378,6 +455,11 @@
 
         <!-- Tela 2: Modo Foco -->
         <div id="screen-focus" class="screen">
+            <div id="focus-block-badge" class="focus-block-badge" style="display: none;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect></svg>
+                Bloco: <strong id="focus-block-name"></strong>
+            </div>
+
             <div class="progress-container">
                 <span class="progress-text" id="progress-text">Tarefa 1 de 5</span>
                 <div class="progress-bar-bg">
@@ -389,13 +471,13 @@
                 <h2 class="task-text" id="current-task"></h2>
             </div>
 
-            <div class="button-group" style="margin-bottom: 12px;">
+            <div class="button-group button-group-half" style="margin-bottom: 12px;">
                 <button id="btn-home" class="btn btn-secondary" title="Voltar para a tela inicial">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
                     Tela Inicial
                 </button>
                 <button id="btn-prev" class="btn btn-secondary" title="Voltar para a tarefa anterior">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
                     Anterior
                 </button>
             </div>
@@ -417,7 +499,9 @@
                 <div class="trophy">🎉</div>
                 <h1 class="title">Parabéns!</h1>
                 <p class="subtitle" id="done-message">Você concluiu todas as tarefas!</p>
-                <button id="btn-restart" class="btn">Criar Nova Lista</button>
+                <div class="button-group" style="margin-top: 18px;">
+                    <button id="btn-restart" class="btn">Criar Nova Lista</button>
+                </div>
             </div>
         </div>
 
@@ -448,13 +532,18 @@
         
         const doneMessage = document.getElementById('done-message');
         const btnRestart = document.getElementById('btn-restart');
+        const btnTheme = document.getElementById('btn-theme-index');
 
         // Estado do App
         let tasks = [];
         let currentIndex = 0;
+        let blockTitle = '';
+        let blockId = null;
+        let fromOrganizer = false;
 
         // Inicializar lendo do LocalStorage
         function init() {
+            initTheme();
             const savedData = localStorage.getItem('focusAppState');
             if (savedData) {
                 try {
@@ -462,6 +551,11 @@
                     if (state.tasks && state.tasks.length > 0 && state.currentIndex < state.tasks.length) {
                         tasks = state.tasks;
                         currentIndex = state.currentIndex;
+                        blockTitle = state.blockTitle || '';
+                        blockId = state.blockId || null;
+                        fromOrganizer = !!state.fromOrganizer;
+
+                        updateBlockBadge();
                         showScreen(screenFocus);
                         
                         // Restaura o progresso
@@ -481,15 +575,62 @@
             showScreen(screenAdd);
         }
 
+        function updateBlockBadge() {
+            const badge = document.getElementById('focus-block-badge');
+            const nameEl = document.getElementById('focus-block-name');
+            if (badge && nameEl) {
+                if (blockTitle) {
+                    nameEl.textContent = blockTitle;
+                    badge.style.display = 'inline-flex';
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
+        }
+
         function saveState() {
             localStorage.setItem('focusAppState', JSON.stringify({
                 tasks: tasks,
-                currentIndex: currentIndex
+                currentIndex: currentIndex,
+                blockTitle: blockTitle,
+                blockId: blockId,
+                fromOrganizer: fromOrganizer
             }));
         }
 
         function clearState() {
             localStorage.removeItem('focusAppState');
+            blockTitle = '';
+            blockId = null;
+            fromOrganizer = false;
+            updateBlockBadge();
+        }
+
+        function syncTaskCompletedWithOrganizer(taskText, targetBlockId) {
+            try {
+                const orgData = localStorage.getItem('focusOrganizerState');
+                if (!orgData) return;
+                const orgState = JSON.parse(orgData);
+                if (!orgState.blocks) return;
+
+                let updated = false;
+                for (const b of orgState.blocks) {
+                    if (targetBlockId && b.id !== targetBlockId) continue;
+                    for (const t of b.tasks) {
+                        if (t.text === taskText && !t.completed) {
+                            t.completed = true;
+                            updated = true;
+                            break;
+                        }
+                    }
+                    if (updated) break;
+                }
+                if (updated) {
+                    localStorage.setItem('focusOrganizerState', JSON.stringify(orgState));
+                }
+            } catch (e) {
+                console.error("Erro ao sincronizar com organizador", e);
+            }
         }
 
         function showScreen(screenEl) {
@@ -542,6 +683,40 @@
                 currentTaskEl.style.opacity = 1;
                 currentTaskEl.style.transform = 'translateY(0)';
             }
+        }
+
+        // Tema
+        function initTheme() {
+            const saved = localStorage.getItem('focusOrganizerTheme');
+            if (saved) {
+                document.documentElement.setAttribute('data-theme', saved);
+            }
+            updateThemeIcon();
+        }
+
+        function toggleTheme() {
+            const current = document.documentElement.getAttribute('data-theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+            let next;
+            if (current === 'dark') next = 'light';
+            else if (current === 'light') next = 'dark';
+            else next = prefersDark ? 'light' : 'dark';
+
+            document.documentElement.setAttribute('data-theme', next);
+            localStorage.setItem('focusOrganizerTheme', next);
+            updateThemeIcon();
+        }
+
+        function updateThemeIcon() {
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark' ||
+                (!document.documentElement.getAttribute('data-theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+            document.getElementById('icon-sun-index').style.display = isDark ? 'none' : 'block';
+            document.getElementById('icon-moon-index').style.display = isDark ? 'block' : 'none';
+        }
+
+        if (btnTheme) {
+            btnTheme.addEventListener('click', toggleTheme);
         }
 
         // Event Listeners
@@ -644,6 +819,11 @@
                 return;
             }
 
+            blockTitle = '';
+            blockId = null;
+            fromOrganizer = false;
+            updateBlockBadge();
+
             currentIndex = 0;
             saveState();
             showScreen(screenFocus);
@@ -661,6 +841,11 @@
         });
 
         btnComplete.addEventListener('click', () => {
+            if (currentIndex < tasks.length) {
+                const finishedText = tasks[currentIndex];
+                syncTaskCompletedWithOrganizer(finishedText, blockId);
+            }
+
             currentIndex++;
             saveState();
             
