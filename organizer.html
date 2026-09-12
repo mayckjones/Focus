@@ -2710,13 +2710,84 @@
                 });
             }
 
-            // Footer with focus button
+            // Footer with focus button and quick add input
             const footer = document.createElement('div');
             footer.className = 'block-footer';
+            
+            const quickAddContainer = document.createElement('div');
+            quickAddContainer.className = 'block-quick-add';
+            quickAddContainer.style.display = 'flex';
+            quickAddContainer.style.alignItems = 'center';
+            quickAddContainer.style.gap = '8px';
+            quickAddContainer.style.marginBottom = '12px';
+
+            const quickAddInput = document.createElement('input');
+            quickAddInput.type = 'text';
+            quickAddInput.placeholder = '+ Adicionar tarefa...';
+            quickAddInput.style.flex = '1';
+            quickAddInput.style.padding = '8px 12px';
+            quickAddInput.style.border = '1px solid var(--border)';
+            quickAddInput.style.borderRadius = 'var(--radius-sm)';
+            quickAddInput.style.background = 'var(--bg)';
+            quickAddInput.style.color = 'var(--text)';
+            quickAddInput.style.fontSize = '13px';
+            
+            quickAddInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && quickAddInput.value.trim()) {
+                    e.preventDefault();
+                    const newTask = createTask(quickAddInput.value);
+                    // Extract days globally? Sure, why not:
+                    const extractedDay = extractDayFromText(newTask.text);
+                    if (extractedDay) {
+                        newTask.days.push(extractedDay);
+                    }
+                    block.tasks.push(newTask);
+                    saveState();
+                    renderAll();
+                    setTimeout(() => {
+                        const newCard = document.querySelector(`.block-card[data-block-id="${block.id}"] .block-quick-add input`);
+                        if (newCard) newCard.focus();
+                    }, 0);
+                }
+            });
+
+            const quickAddBtn = document.createElement('button');
+            quickAddBtn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>';
+            quickAddBtn.style.background = 'var(--primary)';
+            quickAddBtn.style.color = 'white';
+            quickAddBtn.style.border = 'none';
+            quickAddBtn.style.borderRadius = 'var(--radius-sm)';
+            quickAddBtn.style.width = '32px';
+            quickAddBtn.style.height = '32px';
+            quickAddBtn.style.display = 'flex';
+            quickAddBtn.style.alignItems = 'center';
+            quickAddBtn.style.justifyContent = 'center';
+            quickAddBtn.style.cursor = 'pointer';
+
+            quickAddBtn.addEventListener('click', () => {
+                if (quickAddInput.value.trim()) {
+                    const newTask = createTask(quickAddInput.value);
+                    const extractedDay = extractDayFromText(newTask.text);
+                    if (extractedDay) newTask.days.push(extractedDay);
+                    block.tasks.push(newTask);
+                    saveState();
+                    renderAll();
+                    setTimeout(() => {
+                        const newCard = document.querySelector(`.block-card[data-block-id="${block.id}"] .block-quick-add input`);
+                        if (newCard) newCard.focus();
+                    }, 0);
+                }
+            });
+
+            quickAddContainer.appendChild(quickAddInput);
+            quickAddContainer.appendChild(quickAddBtn);
+
             const focusBtnFull = document.createElement('button');
             focusBtnFull.className = 'block-focus-btn';
             focusBtnFull.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> Focar neste bloco';
             focusBtnFull.addEventListener('click', () => focusOnBlock(block));
+            
+            footer.appendChild(quickAddContainer);
             footer.appendChild(focusBtnFull);
 
             card.appendChild(header);
