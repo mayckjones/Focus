@@ -1923,6 +1923,18 @@
             }, { offset: Number.NEGATIVE_INFINITY }).element;
         }
 
+        function getDragDropTargetBlock(container, x, y) {
+            const draggableElements = [...container.querySelectorAll('.block-card:not(.dragging-block)')];
+            for (const child of draggableElements) {
+                const box = child.getBoundingClientRect();
+                if (x >= box.left && x <= box.right && y >= box.top && y <= box.bottom) {
+                    const centerX = box.left + box.width / 2;
+                    return { element: child, insertBefore: x < centerX };
+                }
+            }
+            return null;
+        }
+
         function rebuildStateFromDOM() {
             const allTasks = new Map();
             state.inbox.forEach(t => allTasks.set(t.id, t));
@@ -1935,6 +1947,7 @@
                     .filter(Boolean);
             }
 
+            const newBlocks = [];
             document.querySelectorAll('.block-card').forEach(blockCard => {
                 const blockId = blockCard.dataset.blockId;
                 const block = state.blocks.find(b => b.id === blockId);
@@ -1942,8 +1955,12 @@
                     block.tasks = Array.from(blockCard.querySelectorAll('.task-card'))
                         .map(card => allTasks.get(card.dataset.taskId))
                         .filter(Boolean);
+                    newBlocks.push(block);
                 }
             });
+            if (newBlocks.length === state.blocks.length) {
+                state.blocks = newBlocks;
+            }
 
             saveState();
             renderAll();
@@ -2164,6 +2181,7 @@
 
             // Drag events
             card.addEventListener('dragstart', (e) => {
+                e.stopPropagation(); // Previne que arraste o bloco inteiro quando estiver arrastando apenas a tarefa
                 card.classList.add('dragging');
                 const source = findTaskLocation(task.id);
                 dragData = {
@@ -2306,8 +2324,32 @@
             const card = document.createElement('div');
             card.className = 'block-card';
             card.dataset.blockId = block.id;
+            card.setAttribute('draggable', 'true');
             card.style.borderTopColor = colors.dot;
             card.style.borderTopWidth = '3px';
+
+            card.addEventListener('dragstart', (e) => {
+                // Se o drag foi iniciado em um input ou botão, não arrastar o bloco
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+                    e.preventDefault();
+                    return;
+                }
+                card.classList.add('dragging-block');
+                dragData = { blockId: block.id };
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', block.id);
+                requestAnimationFrame(() => {
+                    card.style.opacity = '0.5';
+                });
+            });
+
+            card.addEventListener('dragend', () => {
+                card.classList.remove('dragging-block');
+                card.style.opacity = '';
+                dragData = null;
+                clearAllDragOver();
+                rebuildStateFromDOM();
+            });
 
             // Header
             const header = document.createElement('div');
@@ -2423,6 +2465,7 @@
             card.addEventListener('drop', (e) => {
                 e.preventDefault();
                 card.classList.remove('drag-over');
+                // Drop handled by blocksPanel or container
             });
 
             return card;
@@ -2497,6 +2540,22 @@
             addBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Novo Bloco';
             addBtn.addEventListener('click', addBlock);
             blocksPanel.appendChild(addBtn);
+
+            blocksPanel.addEventListener('dragover', (e) => {
+                if (dragData && dragData.blockId) {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                    const target = getDragDropTargetBlock(blocksPanel, e.clientX, e.clientY);
+                    const dragging = document.querySelector('.dragging-block');
+                    if (dragging && target && target.element && target.element !== dragging) {
+                        if (target.insertBefore) {
+                            blocksPanel.insertBefore(dragging, target.element);
+                        } else {
+                            blocksPanel.insertBefore(dragging, target.element.nextSibling);
+                        }
+                    }
+                }
+            });
 
             // Render inbox
             const inboxTasks = document.getElementById('inbox-tasks');
