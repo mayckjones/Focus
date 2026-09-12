@@ -1985,6 +1985,7 @@
 
         const DAY_CONFIG = {
             hoje:    { label: 'Hoje',    color: 'var(--day-hoje)',  bg: 'rgba(0,120,212,0.12)' },
+            amanha:  { label: 'Amanhã',  color: 'var(--day-ter)',   bg: 'rgba(230,126,34,0.12)' },
             segunda: { label: 'Segunda', color: 'var(--day-seg)',   bg: 'rgba(52,152,219,0.12)' },
             terca:   { label: 'Terça',   color: 'var(--day-ter)',   bg: 'rgba(230,126,34,0.12)' },
             quarta:  { label: 'Quarta',  color: 'var(--day-qua)',   bg: 'rgba(46,204,113,0.12)' },
@@ -2420,7 +2421,32 @@
                 // Remove existing custom dates to keep at most one specific date (optional, but cleaner)
                 task.days = task.days.filter(d => !d.match(/^\d{4}-\d{2}-\d{2}$/));
                 if (dateInput.value) {
-                    task.days.push(dateInput.value);
+                    const selectedStr = dateInput.value;
+                    task.days.push(selectedStr);
+
+                    const parts = selectedStr.split('-');
+                    const d = new Date(parts[0], parts[1] - 1, parts[2]);
+                    
+                    const today = new Date();
+                    today.setHours(0,0,0,0);
+                    
+                    const diffTime = d.getTime() - today.getTime();
+                    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+                    
+                    const daysMap = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
+                    let categoryToAdd = null;
+
+                    if (diffDays === 0) {
+                        categoryToAdd = 'hoje';
+                    } else if (diffDays === 1) {
+                        categoryToAdd = 'amanha';
+                    } else {
+                        categoryToAdd = daysMap[d.getDay()];
+                    }
+
+                    if (categoryToAdd && !task.days.includes(categoryToAdd)) {
+                        task.days.push(categoryToAdd);
+                    }
                 }
                 saveState();
                 picker.remove();
@@ -2964,11 +2990,7 @@
             if (!text) return null;
             const lower = text.toLowerCase();
             if (/\b(hoje|meu\s+dia)\b/.test(lower)) return 'hoje';
-            if (/\b(amanhã|amanha)\b/.test(lower)) {
-                const days = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
-                const today = new Date().getDay();
-                return days[(today + 1) % 7];
-            }
+            if (/\b(amanhã|amanha)\b/.test(lower)) return 'amanha';
             if (/\b(dom|domingo)\b/.test(lower)) return 'domingo';
             if (/\b(seg|segunda(-feira)?)\b/.test(lower)) return 'segunda';
             if (/\b(ter|terça|terca(-feira)?)\b/.test(lower)) return 'terca';
