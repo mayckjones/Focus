@@ -1810,7 +1810,7 @@
             <h1 class="header-title">Focus <span>Organizer</span></h1>
         </div>
         <div class="header-actions">
-            <a href="index.html" class="header-btn" id="btn-back-focus" title="Voltar ao Modo Foco">
+            <a href="index.html?mode=focus" class="header-btn" id="btn-back-focus" title="Voltar ao Modo Foco">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
                 <span>Modo Foco</span>
             </a>
@@ -2923,7 +2923,7 @@
                 fromOrganizer: true
             };
             localStorage.setItem(FOCUS_HANDOFF_KEY, JSON.stringify(focusState));
-            window.location.href = 'index.html';
+            window.location.href = 'index.html?mode=focus';
         }
 
         // ===========================
