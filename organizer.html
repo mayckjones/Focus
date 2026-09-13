@@ -434,7 +434,6 @@
         .block-card.drag-over {
             border-color: var(--primary);
             box-shadow: var(--shadow-glow);
-            transform: scale(1.01);
         }
 
         .block-header {
@@ -861,7 +860,19 @@
         .task-card.dragging {
             opacity: 0.4;
             cursor: grabbing;
-            transform: scale(0.98);
+            animation: none;
+        }
+
+        .drop-before {
+            box-shadow: inset 0 3px 0 var(--primary) !important;
+        }
+
+        .drop-after {
+            box-shadow: inset 0 -3px 0 var(--primary) !important;
+        }
+
+        .task-text, .subtask-text {
+            cursor: text;
         }
 
         .task-card.completed {
@@ -2019,6 +2030,23 @@
         };
 
         let dragData = null; // { taskId, sourceType: 'inbox'|'block', sourceBlockId? }
+        let pendingDrop = null;
+
+        function previewDrop(container, before, indicator, after = false) {
+            document.querySelectorAll('.drop-before, .drop-after').forEach(el => el.classList.remove('drop-before', 'drop-after'));
+            pendingDrop = { container, before };
+            if (indicator) indicator.classList.add(after ? 'drop-after' : 'drop-before');
+        }
+
+        function commitDrop(e) {
+            if (!dragData || !pendingDrop) return;
+            e.preventDefault();
+            e.stopPropagation();
+            const dragging = document.querySelector(dragData.blockId ? '.dragging-block' : '.dragging');
+            const { container, before } = pendingDrop;
+            if (dragging && before !== dragging) container.insertBefore(dragging, before || null);
+            clearAllDragOver();
+        }
 
         // ===========================
         // UTILITIES
@@ -2235,7 +2263,8 @@
             const textEl = document.createElement('div');
             textEl.className = 'task-text';
             textEl.textContent = task.text;
-            textEl.addEventListener('dblclick', (e) => {
+            textEl.title = 'Clique para editar';
+            textEl.addEventListener('click', (e) => {
                 e.stopPropagation();
                 startEditTask(task, textEl, card);
             });
@@ -2338,6 +2367,10 @@
             // Drag events
             card.addEventListener('dragstart', (e) => {
                 e.stopPropagation(); // Previne que arraste o bloco inteiro quando estiver arrastando apenas a tarefa
+                if (e.target.closest('input, textarea, button') || card.querySelector('.task-text-input')) {
+                    e.preventDefault();
+                    return;
+                }
                 card.classList.add('dragging');
                 const source = findTaskLocation(task.id);
                 dragData = {
@@ -2353,7 +2386,8 @@
                 });
             });
 
-            card.addEventListener('dragend', () => {
+            card.addEventListener('dragend', (e) => {
+                e.stopPropagation();
                 card.classList.remove('dragging');
                 card.style.opacity = '';
                 dragData = null;
@@ -2571,7 +2605,7 @@
 
             card.addEventListener('dragstart', (e) => {
                 // Se o drag foi iniciado em um input ou botão, não arrastar o bloco
-                if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+                if (e.target.closest('input, textarea, button') || card.querySelector('.task-text-input')) {
                     e.preventDefault();
                     return;
                 }
@@ -2810,7 +2844,9 @@
 
             // Drop zone events
             card.addEventListener('dragover', (e) => {
+                if (!dragData || !dragData.taskId) return;
                 e.preventDefault();
+                e.stopPropagation();
                 e.dataTransfer.dropEffect = 'move';
                 card.classList.add('drag-over');
 
@@ -2819,11 +2855,8 @@
                     const afterElement = getDragAfterElement(container, e.clientY);
                     const dragging = document.querySelector('.dragging');
                     if (dragging) {
-                        if (afterElement == null) {
-                            container.appendChild(dragging);
-                        } else {
-                            container.insertBefore(dragging, afterElement);
-                        }
+                        const last = container.querySelector('.task-card:last-child');
+                        previewDrop(container, afterElement, afterElement || last || container, !afterElement);
                     }
                 }
             });
@@ -2831,13 +2864,12 @@
             card.addEventListener('dragleave', (e) => {
                 if (!card.contains(e.relatedTarget)) {
                     card.classList.remove('drag-over');
+                    if (pendingDrop && pendingDrop.container === card.querySelector('.block-tasks')) clearAllDragOver();
                 }
             });
 
             card.addEventListener('drop', (e) => {
-                e.preventDefault();
-                card.classList.remove('drag-over');
-                // Drop handled by blocksPanel or container
+                if (dragData && dragData.taskId) commitDrop(e);
             });
 
             return card;
@@ -2913,21 +2945,23 @@
             addBtn.addEventListener('click', addBlock);
             blocksPanel.appendChild(addBtn);
 
-            blocksPanel.addEventListener('dragover', (e) => {
+            blocksPanel.ondragover = (e) => {
                 if (dragData && dragData.blockId) {
                     e.preventDefault();
                     e.dataTransfer.dropEffect = 'move';
                     const target = getDragDropTargetBlock(blocksPanel, e.clientX, e.clientY);
                     const dragging = document.querySelector('.dragging-block');
                     if (dragging && target && target.element && target.element !== dragging) {
-                        if (target.insertBefore) {
-                            blocksPanel.insertBefore(dragging, target.element);
-                        } else {
-                            blocksPanel.insertBefore(dragging, target.element.nextSibling);
-                        }
+                        previewDrop(blocksPanel, target.insertBefore ? target.element : target.element.nextSibling,
+                            target.element, !target.insertBefore);
+                    } else {
+                        clearAllDragOver();
                     }
                 }
-            });
+            };
+            blocksPanel.ondrop = (e) => {
+                if (dragData && dragData.blockId) commitDrop(e);
+            };
 
             // Render inbox
             const inboxTasks = document.getElementById('inbox-tasks');
@@ -2958,6 +2992,8 @@
         // ===========================
         function clearAllDragOver() {
             document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+            document.querySelectorAll('.drop-before, .drop-after').forEach(el => el.classList.remove('drop-before', 'drop-after'));
+            pendingDrop = null;
         }
 
         // ===========================
@@ -2966,6 +3002,7 @@
         const inboxPanel = document.getElementById('inbox-panel');
 
         inboxPanel.addEventListener('dragover', (e) => {
+            if (!dragData || !dragData.taskId) return;
             e.preventDefault();
             e.dataTransfer.dropEffect = 'move';
             inboxPanel.classList.add('drag-over');
@@ -2975,11 +3012,8 @@
                 const afterElement = getDragAfterElement(container, e.clientY);
                 const dragging = document.querySelector('.dragging');
                 if (dragging) {
-                    if (afterElement == null) {
-                        container.appendChild(dragging);
-                    } else {
-                        container.insertBefore(dragging, afterElement);
-                    }
+                    const last = container.querySelector('.task-card:last-child');
+                    previewDrop(container, afterElement, afterElement || last || container, !afterElement);
                 }
             }
         });
@@ -2987,12 +3021,12 @@
         inboxPanel.addEventListener('dragleave', (e) => {
             if (!inboxPanel.contains(e.relatedTarget)) {
                 inboxPanel.classList.remove('drag-over');
+                if (pendingDrop && pendingDrop.container === document.getElementById('inbox-tasks')) clearAllDragOver();
             }
         });
 
         inboxPanel.addEventListener('drop', (e) => {
-            e.preventDefault();
-            inboxPanel.classList.remove('drag-over');
+            if (dragData && dragData.taskId) commitDrop(e);
         });
 
         // ===========================
@@ -3141,23 +3175,7 @@
                     const viewport = page.getViewport({ scale: 1.0 });
                     const pageHeight = viewport.height;
 
-                    const items = textContent.items.filter(item => item.str && item.str.trim().length > 0);
-                    // Ordena do topo para a base da página
-                    items.sort((a, b) => b.transform[5] - a.transform[5]);
-
-                    const lineGroups = [];
-                    for (const item of items) {
-                        const y = item.transform[5];
-                        const x = item.transform[4];
-                        const fontSize = Math.hypot(item.transform[0], item.transform[1]);
-
-                        const existing = lineGroups.find(l => Math.abs(l.y - y) <= 4);
-                        if (existing) {
-                            existing.items.push({ str: item.str, x, y, fontSize, width: item.width || 0 });
-                        } else {
-                            lineGroups.push({ y, items: [{ str: item.str, x, y, fontSize, width: item.width || 0 }] });
-                        }
-                    }
+                    const lineGroups = groupToDoPdfItems(textContent.items);
 
                     for (const line of lineGroups) {
                         line.items.sort((a, b) => a.x - b.x);
@@ -3221,6 +3239,37 @@
             }
         }
 
+        function groupToDoPdfItems(items) {
+            // To Do emits the checkbox before its text in the content stream.
+            // Its baseline is vertically centered, so sorting it with the text
+            // moves it AFTER the title (or into the middle of wrapped steps).
+            const iconFonts = new Set(items.filter(item => /[\uE000-\uF8FF]/u.test(item.str || '')).map(item => item.fontName));
+            const blocks = [{ marker: null, items: [] }];
+            for (const item of items) {
+                if (!item.str || !item.str.trim() || iconFonts.has(item.fontName)) continue;
+                const str = item.str.trim();
+                const fontSize = Math.hypot(item.transform[0], item.transform[1]);
+                const entry = { str: item.str, x: item.transform[4], y: item.transform[5], fontSize, width: item.width || 0 };
+                // Font size distinguishes exported checkbox glyphs from words
+                // such as a standalone "O" in ordinary task text.
+                if (/^[Kþ○◯O•]$/.test(str) && fontSize >= 12) {
+                    blocks.push({ marker: entry, items: [] });
+                } else {
+                    blocks[blocks.length - 1].items.push(entry);
+                }
+            }
+            return blocks.flatMap(block => {
+                const groups = [];
+                for (const item of block.items.sort((a, b) => b.y - a.y)) {
+                    const existing = groups.find(line => Math.abs(line.y - item.y) <= 4);
+                    if (existing) existing.items.push(item);
+                    else groups.push({ y: item.y, items: [item] });
+                }
+                if (block.marker) groups.unshift({ y: block.marker.y, items: [block.marker] });
+                return groups;
+            });
+        }
+
         function parseToDoLines(lines) {
             const tasks = [];
             let currentTask = null;
@@ -3261,7 +3310,7 @@
                     continue;
                 }
 
-                const cleaned = text.replace(/^[þK○◯O•\-\*]\s*/i, '').trim();
+                const cleaned = text.replace(/^[þK○◯O•\-\*]\s+/i, '').trim();
                 if (!cleaned) continue;
 
                 const hasSubMarker = /^[þ•\-\*]\s+/i.test(text);
@@ -3278,6 +3327,7 @@
                     tasks.push(currentTask);
                     lastItem = currentTask;
                     nextLineForceMainTask = false;
+                    nextLineForceSubtask = false;
                 } 
                 else if (nextLineForceSubtask || hasSubMarker) {
                     if (currentTask) {
