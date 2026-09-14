@@ -34,9 +34,11 @@
         if (!client) return null;
         if (currentUser) return currentUser;
 
-        const { data, error } = await client.auth.getUser();
+        // getSession() retorna session=null normalmente quando o visitante ainda
+        // não entrou. getUser() produziria AuthSessionMissingError nesse cenário.
+        const { data, error } = await client.auth.getSession();
         if (error) throw error;
-        currentUser = data.user;
+        currentUser = data.session?.user || null;
         return currentUser;
     }
 
@@ -177,4 +179,3 @@
         showStatus: showCloudStatus
     };
 })();
-
