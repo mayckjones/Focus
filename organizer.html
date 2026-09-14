@@ -7,6 +7,7 @@
     <meta name="description" content="Organize suas tarefas por blocos de prioridade e foque no que importa.">
     <link rel="icon" type="image/png" href="Logo/Documento2.png">
     <link rel="apple-touch-icon" href="Logo/Documento2.png">
+    <link rel="stylesheet" href="cloud.css">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Focus Organizer">
@@ -1993,6 +1994,9 @@
         <span id="toast-message">Tarefas importadas com sucesso!</span>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="supabase-sync.js"></script>
     <script>
         // ===========================
         // DATA MODEL
@@ -2128,24 +2132,50 @@
         function saveState() {
             try {
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+                window.FocusCloud?.scheduleOrganizerSave(state);
             } catch (e) {
                 console.error('Failed to save state:', e);
             }
         }
 
-        function loadState() {
+        async function loadState() {
+            let localState = null;
             try {
                 const data = localStorage.getItem(STORAGE_KEY);
                 if (data) {
                     const parsed = JSON.parse(data);
-                    state.inbox = parsed.inbox || [];
-                    state.blocks = parsed.blocks || [];
-                    state.activeFilter = parsed.activeFilter || 'all';
-                    return true;
+                    localState = parsed;
                 }
             } catch (e) {
                 console.error('Failed to load state:', e);
             }
+
+            if (window.FocusCloud?.configured) {
+                try {
+                    const cloudState = await window.FocusCloud.loadOrganizerState();
+                    if (cloudState && Array.isArray(cloudState.blocks)) {
+                        state.inbox = cloudState.inbox || [];
+                        state.blocks = cloudState.blocks || [];
+                        state.activeFilter = cloudState.activeFilter || 'all';
+                        state.searchQuery = cloudState.searchQuery || '';
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+                        return true;
+                    }
+                } catch (e) {
+                    console.error('Failed to load cloud state:', e);
+                    window.FocusCloud.showStatus('Usando a cópia local', 'warning');
+                }
+            }
+
+            if (localState) {
+                state.inbox = localState.inbox || [];
+                state.blocks = localState.blocks || [];
+                state.activeFilter = localState.activeFilter || 'all';
+                state.searchQuery = localState.searchQuery || '';
+                window.FocusCloud?.scheduleOrganizerSave(state);
+                return true;
+            }
+
             return false;
         }
 
@@ -2923,6 +2953,7 @@
                 fromOrganizer: true
             };
             localStorage.setItem(FOCUS_HANDOFF_KEY, JSON.stringify(focusState));
+            window.FocusCloud?.scheduleFocusSave(focusState);
             window.location.href = 'index.html?mode=focus';
         }
 
@@ -3787,10 +3818,13 @@
         // ===========================
         // INIT
         // ===========================
-        function init() {
+        async function init() {
             initTheme();
 
-            const loaded = loadState();
+            const user = await window.FocusCloud?.requireUser();
+            if (window.FocusCloud?.configured && !user) return;
+
+            const loaded = await loadState();
             if (!loaded) {
                 // Initialize with default blocks
                 state.blocks = DEFAULT_BLOCKS;

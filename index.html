@@ -7,6 +7,7 @@
     <link rel="icon" type="image/png" href="Logo/Documento2.png">
     <!-- iPhone/iPad -->
     <link rel="apple-touch-icon" href="Logo/Documento2.png">
+    <link rel="stylesheet" href="cloud.css">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Focus">
@@ -627,6 +628,9 @@
 
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="supabase-sync.js"></script>
     <script>
         // Elementos do DOM
         const screenAdd = document.getElementById('screen-add');
@@ -662,14 +666,30 @@
         let fromOrganizer = false;
 
         // Inicializar lendo do LocalStorage
-        function init() {
+        async function init() {
             initTheme();
             const enterFocus = new URLSearchParams(window.location.search).get('mode') === 'focus';
             if (!enterFocus) {
                 window.location.replace('organizer.html');
                 return;
             }
-            const savedData = localStorage.getItem('focusAppState');
+
+            const user = await window.FocusCloud?.requireUser();
+            if (window.FocusCloud?.configured && !user) return;
+
+            let savedData = localStorage.getItem('focusAppState');
+            if (window.FocusCloud?.configured) {
+                try {
+                    const cloudState = await window.FocusCloud.loadFocusState();
+                    if (cloudState && Array.isArray(cloudState.tasks) && cloudState.tasks.length > 0) {
+                        savedData = JSON.stringify(cloudState);
+                        localStorage.setItem('focusAppState', savedData);
+                    }
+                } catch (error) {
+                    console.error('Erro ao carregar sessão de foco da nuvem:', error);
+                    window.FocusCloud.showStatus('Usando a cópia local', 'warning');
+                }
+            }
             if (savedData) {
                 try {
                     const state = JSON.parse(savedData);
@@ -714,17 +734,20 @@
         }
 
         function saveState() {
-            localStorage.setItem('focusAppState', JSON.stringify({
+            const focusState = {
                 tasks: tasks,
                 currentIndex: currentIndex,
                 blockTitle: blockTitle,
                 blockId: blockId,
                 fromOrganizer: fromOrganizer
-            }));
+            };
+            localStorage.setItem('focusAppState', JSON.stringify(focusState));
+            window.FocusCloud?.scheduleFocusSave(focusState);
         }
 
         function clearState() {
             localStorage.removeItem('focusAppState');
+            window.FocusCloud?.clearFocusState();
             blockTitle = '';
             blockId = null;
             fromOrganizer = false;
@@ -754,6 +777,7 @@
                 }
                 if (updated) {
                     localStorage.setItem('focusOrganizerState', JSON.stringify(orgState));
+                    window.FocusCloud?.scheduleOrganizerSave(orgState);
                 }
             } catch (e) {
                 console.error("Erro ao sincronizar com organizador", e);

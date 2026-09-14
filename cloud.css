@@ -1,0 +1,67 @@
+.focus-account-menu {
+    position: fixed;
+    z-index: 10000;
+    right: 18px;
+    bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    max-width: min(360px, calc(100vw - 36px));
+    padding: 8px 8px 8px 14px;
+    color: var(--text, var(--text-main, #1a1d23));
+    background: var(--surface, #fff);
+    border: 1px solid var(--border, #d1d5db);
+    border-radius: 999px;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, .14);
+    font-family: Inter, "Segoe UI", system-ui, sans-serif;
+}
+
+.focus-account-menu span {
+    overflow: hidden;
+    font-size: 12px;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.focus-account-menu button {
+    padding: 7px 12px;
+    color: #fff;
+    background: var(--primary, #0078d4);
+    border: 0;
+    border-radius: 999px;
+    cursor: pointer;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.focus-account-menu button:disabled {
+    cursor: wait;
+    opacity: .6;
+}
+
+.focus-cloud-status {
+    position: fixed;
+    z-index: 10001;
+    left: 50%;
+    bottom: 22px;
+    transform: translateX(-50%);
+    padding: 10px 15px;
+    color: #fff;
+    background: #344054;
+    border-radius: 999px;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, .18);
+    font: 600 12px/1.2 Inter, "Segoe UI", system-ui, sans-serif;
+    white-space: nowrap;
+}
+
+.focus-cloud-status[data-type="success"] { background: #067647; }
+.focus-cloud-status[data-type="warning"] { background: #b54708; }
+.focus-cloud-status[data-type="error"] { background: #b42318; }
+
+@media (max-width: 640px) {
+    .focus-account-menu span { display: none; }
+    .focus-cloud-status { bottom: 72px; }
+}
+
