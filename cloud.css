@@ -16,6 +16,14 @@
 .focus-account-actions button:hover { background:var(--bg-secondary,#f1f3f5); }
 .focus-account-actions .danger { color:#b42318; }
 .focus-account-actions button:disabled { cursor:not-allowed; opacity:.5; }
+.focus-password-form { display:grid; gap:6px; padding-top:8px; }
+.focus-password-form input { padding:8px; color:var(--text,#1a1d23); background:transparent; border:1px solid var(--border,#d1d5db); border-radius:7px; font:12px Inter,"Segoe UI",system-ui,sans-serif; }
+.focus-password-form button { padding:8px; color:#fff; background:var(--primary,#0078d4); border:0; border-radius:7px; font-weight:700; cursor:pointer; }
+.focus-password-form .focus-toggle-passwords { color:var(--text,#1a1d23); background:transparent; border:1px solid var(--border,#d1d5db); }
+.focus-password-form p { min-height:28px; margin:2px 0 0; color:var(--muted,#667085); font-size:11px; line-height:1.35; }
+.focus-password-form p[data-type="error"] { color:#b42318; }
+.focus-password-form p[data-type="success"] { color:#067647; }
+.focus-password-form button[type="submit"]:disabled { cursor:wait; opacity:.72; }
 
 .focus-account-actions button:disabled {
     cursor: default;

@@ -155,11 +155,67 @@
         const panel = document.createElement('div');
         panel.className = 'focus-account-panel';
         panel.hidden = true;
-        panel.innerHTML = `<div class="focus-account-summary"><div class="focus-account-avatar">${initials}</div><div class="focus-account-email">${email}</div></div><div class="focus-account-actions"><button type="button" class="focus-avatar-action">Foto de perfil</button><button type="button" class="focus-avatar-remove" ${user.user_metadata?.avatar_path ? '' : 'disabled'}>Remover foto</button><button type="button" disabled>Trocar senha</button><button type="button" disabled>Baixar dados</button></div>`;
+        panel.innerHTML = `<div class="focus-account-summary"><div class="focus-account-avatar">${initials}</div><div class="focus-account-email">${email}</div></div><div class="focus-account-actions"><button type="button" class="focus-avatar-action">Foto de perfil</button><button type="button" class="focus-avatar-remove" ${user.user_metadata?.avatar_path ? '' : 'disabled'}>Remover foto</button><button type="button" class="focus-password-action">Trocar senha</button><button type="button" disabled>Baixar dados</button></div>`;
         const fileInput = document.createElement('input');
         fileInput.type = 'file'; fileInput.accept = 'image/png,image/jpeg,image/webp'; fileInput.hidden = true;
         const avatarAction = panel.querySelector('.focus-avatar-action');
         const removeAvatar = panel.querySelector('.focus-avatar-remove');
+        const passwordAction = panel.querySelector('.focus-password-action');
+        passwordAction.addEventListener('click', () => {
+            if (panel.querySelector('.focus-password-form')) return;
+            const form = document.createElement('form');
+            form.className = 'focus-password-form';
+            form.innerHTML = '<input required type="password" name="current" placeholder="Senha atual"><input required minlength="6" type="password" name="next" placeholder="Nova senha (mín. 6)"><input required minlength="6" type="password" name="confirm" placeholder="Confirmar nova senha"><button type="button" class="focus-toggle-passwords" aria-pressed="false">Mostrar senhas</button><button type="submit">Salvar senha</button><p aria-live="polite"></p>';
+            form.querySelector('.focus-toggle-passwords').addEventListener('click', (toggle) => {
+                const visible = toggle.currentTarget.getAttribute('aria-pressed') !== 'true';
+                form.querySelectorAll('input').forEach(input => { input.type = visible ? 'text' : 'password'; });
+                toggle.currentTarget.setAttribute('aria-pressed', String(visible));
+                toggle.currentTarget.textContent = visible ? 'Ocultar senhas' : 'Mostrar senhas';
+            });
+            form.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                const data = new FormData(form);
+                const next = data.get('next');
+                const status = form.querySelector('p');
+                const submit = form.querySelector('button[type="submit"]');
+                const setStatus = (message, type) => {
+                    status.textContent = message;
+                    status.dataset.type = type;
+                };
+
+                if (next !== data.get('confirm')) {
+                    setStatus('As senhas não coincidem.', 'error');
+                    return;
+                }
+
+                submit.disabled = true;
+                submit.textContent = 'Confirmando…';
+                try {
+                    const accountEmail = currentUser?.email || email;
+                    const { error: authError } = await client.auth.signInWithPassword({ email: accountEmail, password: data.get('current') });
+                    if (authError) {
+                        console.error('Falha ao reautenticar:', authError);
+                        setStatus('Não foi possível validar a senha atual. A senha não foi alterada.', 'error');
+                        return;
+                    }
+                    const { error } = await client.auth.updateUser({ password: next });
+                    if (error) {
+                        console.error('Falha ao atualizar a senha:', error);
+                        setStatus('Não foi possível alterar a senha. Tente novamente.', 'error');
+                        return;
+                    }
+                    setStatus('Senha alterada com sucesso.', 'success');
+                    form.reset();
+                } catch (error) {
+                    console.error('Erro ao alterar senha:', error);
+                    setStatus('Não foi possível concluir a alteração agora. Tente novamente.', 'error');
+                } finally {
+                    submit.disabled = false;
+                    submit.textContent = 'Salvar senha';
+                }
+            });
+            panel.querySelector('.focus-account-actions').appendChild(form);
+        });
         avatarAction.addEventListener('click', () => fileInput.click());
         fileInput.addEventListener('change', async () => {
             const file = fileInput.files?.[0]; if (!file) return;
