@@ -270,7 +270,7 @@
         const panel = document.createElement('div');
         panel.className = 'focus-account-panel';
         panel.hidden = true;
-        panel.innerHTML = `<div class="focus-account-summary"><div class="focus-account-avatar">${initials}</div><div class="focus-account-email">${email}</div></div><div class="focus-account-actions"><button type="button" class="focus-avatar-action">Foto de perfil</button><button type="button" class="focus-avatar-remove" ${user.user_metadata?.avatar_path ? '' : 'disabled'}>Remover foto</button><button type="button" class="focus-password-action">Trocar senha</button><button type="button" class="focus-export-action">Baixar dados</button><button type="button" class="focus-report-action">Relatório visual</button></div>`;
+        panel.innerHTML = `<div class="focus-account-summary"><div class="focus-account-avatar">${initials}</div><div class="focus-account-email">${email}</div></div><div class="focus-account-actions"><button type="button" class="focus-avatar-action">Foto de perfil</button><button type="button" class="focus-avatar-remove" ${user.user_metadata?.avatar_path ? '' : 'disabled'}>Remover foto</button><button type="button" class="focus-password-action">Trocar senha</button><button type="button" class="focus-export-action">Baixar dados</button><button type="button" class="focus-report-action">Relatório visual</button><button type="button" class="focus-delete-action danger">Excluir conta</button></div>`;
         const fileInput = document.createElement('input');
         fileInput.type = 'file'; fileInput.accept = 'image/png,image/jpeg,image/webp'; fileInput.hidden = true;
         const avatarAction = panel.querySelector('.focus-avatar-action');
@@ -278,6 +278,7 @@
         const avatarPreview = panel.querySelector('.focus-account-avatar');
         const exportAction = panel.querySelector('.focus-export-action');
         const reportAction = panel.querySelector('.focus-report-action');
+        const deleteAction = panel.querySelector('.focus-delete-action');
         const passwordAction = panel.querySelector('.focus-password-action');
         passwordAction.addEventListener('click', () => {
             if (panel.querySelector('.focus-password-form')) return;
@@ -369,6 +370,36 @@
             } finally {
                 reportAction.disabled = false;
             }
+        });
+        deleteAction.addEventListener('click', () => {
+            if (panel.querySelector('.focus-delete-form')) return;
+            const form = document.createElement('form');
+            form.className = 'focus-delete-form';
+            form.innerHTML = '<p><strong>Esta ação é irreversível.</strong> A foto, tarefas, blocos e sua conta serão excluídos.</p><label>Digite <strong>EXCLUIR MINHA CONTA</strong> para confirmar.</label><input required name="confirmation" autocomplete="off"><button type="submit">Excluir conta definitivamente</button><p aria-live="polite"></p>';
+            form.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                const status = form.querySelector('p[aria-live]');
+                const submit = form.querySelector('button[type="submit"]');
+                if (new FormData(form).get('confirmation').trim() !== 'EXCLUIR MINHA CONTA') {
+                    status.textContent = 'Digite a frase de confirmação exatamente como mostrada.';
+                    return;
+                }
+                submit.disabled = true;
+                submit.textContent = 'Excluindo…';
+                try {
+                    const { error } = await client.rpc('delete_own_account');
+                    if (error) throw error;
+                    ['focusOrganizerState', 'focusAppState', 'focusOrganizerTheme'].forEach(key => localStorage.removeItem(key));
+                    try { await client.auth.signOut({ scope: 'local' }); } catch (signOutError) { console.warn('Sessão já foi invalidada:', signOutError); }
+                    location.replace('login.html?deleted=1');
+                } catch (error) {
+                    console.error('Erro ao excluir conta:', error);
+                    status.textContent = 'Não foi possível excluir a conta. Confirme a configuração do Supabase e tente novamente.';
+                    submit.disabled = false;
+                    submit.textContent = 'Excluir conta definitivamente';
+                }
+            });
+            panel.querySelector('.focus-account-actions').appendChild(form);
         });
         avatarAction.addEventListener('click', () => fileInput.click());
         fileInput.addEventListener('change', async () => {

@@ -24,6 +24,12 @@
 .focus-password-form p[data-type="error"] { color:#b42318; }
 .focus-password-form p[data-type="success"] { color:#067647; }
 .focus-password-form button[type="submit"]:disabled { cursor:wait; opacity:.72; }
+.focus-delete-form { display:grid; gap:7px; padding:10px 2px 2px; color:var(--text,#1a1d23); font-size:11px; line-height:1.35; }
+.focus-delete-form p { margin:0; }
+.focus-delete-form label { font-weight:600; }
+.focus-delete-form input { padding:8px; color:var(--text,#1a1d23); background:transparent; border:1px solid var(--border,#d1d5db); border-radius:7px; font:12px Inter,"Segoe UI",system-ui,sans-serif; }
+.focus-delete-form button { padding:8px; color:#fff; background:#b42318; border:0; border-radius:7px; font:700 12px Inter,"Segoe UI",system-ui,sans-serif; cursor:pointer; }
+.focus-delete-form button:disabled { cursor:wait; opacity:.72; }
 
 .focus-account-actions button:disabled {
     cursor: default;

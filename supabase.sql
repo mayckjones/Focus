@@ -60,3 +60,31 @@ on public.focus_user_states
 for delete
 to authenticated
 using ((select auth.uid()) = user_id);
+
+-- Autoexclusão segura: a função não recebe user_id. Ela só pode excluir
+-- a conta que corresponde ao token autenticado que a chamou.
+create or replace function public.delete_own_account()
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  requesting_user_id uuid := auth.uid();
+begin
+  if requesting_user_id is null then
+    raise exception 'Usuário não autenticado';
+  end if;
+
+  -- Objetos do Storage precisam sair antes de auth.users.
+  delete from storage.objects
+  where bucket_id = 'focus-avatars'
+    and (storage.foldername(name))[1] = requesting_user_id::text;
+
+  delete from public.focus_user_states where user_id = requesting_user_id;
+  delete from auth.users where id = requesting_user_id;
+end;
+$$;
+
+revoke all on function public.delete_own_account() from public, anon;
+grant execute on function public.delete_own_account() to authenticated;
