@@ -91,7 +91,7 @@
             }, { onConflict: 'user_id' });
 
         if (error) throw error;
-        showCloudStatus('Salvo no Supabase', 'success');
+        // Salvamentos bem-sucedidos acontecem em silêncio para não interromper o fluxo.
     }
 
     function scheduleOrganizerSave(state) {
