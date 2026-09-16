@@ -518,6 +518,158 @@ textarea:focus {
     .progress-container { margin: 12px auto 22px; }
 }
 
+/* Camada exclusiva para smartphones. */
+@media (max-width: 640px) {
+    html,
+    body {
+        width: 100%;
+        max-width: 100%;
+        min-height: 100%;
+        overflow-x: clip;
+    }
+
+    body {
+        min-height: 100dvh;
+        align-items: stretch;
+        padding: max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
+        overscroll-behavior-x: none;
+        -webkit-text-size-adjust: 100%;
+    }
+
+    .container,
+    body:has(#screen-focus.active) .container {
+        width: 100%;
+        max-width: none;
+        min-width: 0;
+        min-height: calc(100dvh - max(20px, env(safe-area-inset-top) + env(safe-area-inset-bottom)));
+        padding: 16px 14px 20px;
+        border-radius: 18px;
+        overflow: clip;
+    }
+
+    .top-actions {
+        width: 100%;
+        min-width: 0;
+        margin-bottom: 14px;
+        gap: 7px;
+    }
+
+    .top-btn {
+        min-height: 42px;
+        padding: 9px 11px;
+        touch-action: manipulation;
+    }
+
+    .theme-toggle {
+        min-width: 42px;
+        width: 42px;
+    }
+
+    .logo-container {
+        margin: 2px 0 14px;
+    }
+
+    .logo-container .focus-theme-logo {
+        width: min(78vw, 280px);
+        max-height: 112px;
+    }
+
+    .subtitle {
+        margin-bottom: 18px;
+        font-size: 13px;
+    }
+
+    textarea {
+        height: clamp(120px, 25dvh, 180px);
+        margin-bottom: 16px;
+        padding: 14px;
+        font-size: 16px;
+    }
+
+    .option-card {
+        margin-bottom: 14px;
+        padding: 12px;
+    }
+
+    .file-actions,
+    .button-group {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    .file-actions .btn,
+    .button-group .btn {
+        min-width: 0;
+        min-height: 48px;
+        padding: 12px 10px;
+        line-height: 1.2;
+        touch-action: manipulation;
+    }
+
+    #btn-resume:not([style*="display: none"]) + #btn-start,
+    #btn-resume:not([style*="display:none"]) + #btn-start {
+        grid-column: auto;
+    }
+
+    .focus-block-badge {
+        max-width: 100%;
+        min-width: 0;
+        overflow: hidden;
+    }
+
+    .focus-block-badge strong {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .progress-container {
+        margin: 12px auto 18px;
+    }
+
+    .task-display {
+        min-height: clamp(190px, 34dvh, 320px);
+        margin-bottom: 16px;
+        padding: 22px 14px;
+        border-radius: 18px;
+        overflow: hidden;
+    }
+
+    .task-text {
+        max-width: 100%;
+        font-size: clamp(24px, 8vw, 34px);
+        line-height: 1.18;
+        overflow-wrap: anywhere;
+        hyphens: auto;
+    }
+
+    .focus-subtasks {
+        max-width: 100%;
+        max-height: min(28dvh, 210px);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+    }
+
+    .focus-subtask-item {
+        min-width: 0;
+        text-align: left;
+    }
+
+    .focus-subtask-text {
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+
+    .screen {
+        min-width: 0;
+    }
+
+    .screen.active {
+        will-change: transform, opacity;
+    }
+}
+
 /* Garantir contraste dos textos no Modo Foco em tema escuro. */
 [data-theme="dark"] body,
 [data-theme="dark"] .container,

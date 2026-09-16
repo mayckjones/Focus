@@ -61,5 +61,32 @@ html[data-theme="dark"] .focus-logo-dark { display:block; }
 
 @media (max-width: 640px) {
     .focus-account-menu span { display: none; }
-    .focus-cloud-status { bottom: 72px; }
+    .focus-account-menu { position: static; }
+    .focus-account-button { width:42px; height:42px; touch-action:manipulation; }
+    .focus-account-panel {
+        position:fixed;
+        z-index:10002;
+        top:max(66px,calc(env(safe-area-inset-top) + 58px));
+        right:max(10px,env(safe-area-inset-right));
+        left:max(10px,env(safe-area-inset-left));
+        width:auto;
+        max-height:calc(100dvh - 82px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+        overflow-y:auto;
+        overscroll-behavior:contain;
+        padding:14px;
+        border-radius:16px;
+    }
+    .focus-account-actions button { min-height:42px; font-size:13px; touch-action:manipulation; }
+    .focus-password-form input,
+    .focus-delete-form input { min-height:44px; font-size:16px; }
+    .focus-cloud-status {
+        right:max(12px,env(safe-area-inset-right));
+        bottom:calc(14px + env(safe-area-inset-bottom));
+        left:max(12px,env(safe-area-inset-left));
+        width:auto;
+        max-width:none;
+        transform:none;
+        text-align:center;
+        white-space:normal;
+    }
 }
