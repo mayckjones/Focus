@@ -418,6 +418,7 @@
             min-width: 0;
             display: flex;
             flex-direction: column;
+            cursor: default;
             background: var(--glass-bg);
             backdrop-filter: blur(var(--glass-blur));
             -webkit-backdrop-filter: blur(var(--glass-blur));
@@ -835,7 +836,7 @@
             background: var(--surface);
             border: 1px solid var(--border-light);
             border-radius: var(--radius-sm);
-            cursor: grab;
+            cursor: default;
             transition: border-color var(--transition), box-shadow var(--transition), background var(--transition);
             position: relative;
             user-select: none;
@@ -860,8 +861,15 @@
 
         .task-card.dragging {
             opacity: 0.4;
-            cursor: grabbing;
+            cursor: default;
             animation: none;
+        }
+
+        .block-card,
+        .block-card *,
+        .task-card,
+        .task-card * {
+            cursor: default !important;
         }
 
         .drop-before {
