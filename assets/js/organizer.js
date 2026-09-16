@@ -1,4 +1,4 @@
-// ===========================
+﻿// ===========================
 // DATA MODEL
 // ===========================
 const STORAGE_KEY = 'focusOrganizerState';
@@ -6,13 +6,13 @@ const FOCUS_HANDOFF_KEY = 'focusAppState';
 
 const DAY_CONFIG = {
     hoje:    { label: 'Hoje',    color: 'var(--day-hoje)',  bg: 'rgba(0,120,212,0.12)' },
-    amanha:  { label: 'Amanhã',  color: 'var(--day-ter)',   bg: 'rgba(230,126,34,0.12)' },
+    amanha:  { label: 'AmanhÃ£',  color: 'var(--day-ter)',   bg: 'rgba(230,126,34,0.12)' },
     segunda: { label: 'Segunda', color: 'var(--day-seg)',   bg: 'rgba(52,152,219,0.12)' },
-    terca:   { label: 'Terça',   color: 'var(--day-ter)',   bg: 'rgba(230,126,34,0.12)' },
+    terca:   { label: 'TerÃ§a',   color: 'var(--day-ter)',   bg: 'rgba(230,126,34,0.12)' },
     quarta:  { label: 'Quarta',  color: 'var(--day-qua)',   bg: 'rgba(46,204,113,0.12)' },
     quinta:  { label: 'Quinta',  color: 'var(--day-qui)',   bg: 'rgba(155,89,182,0.12)' },
     sexta:   { label: 'Sexta',   color: 'var(--day-sex)',   bg: 'rgba(26,188,156,0.12)' },
-    sabado:  { label: 'Sábado',  color: 'var(--day-sab)',   bg: 'rgba(231,76,60,0.12)' },
+    sabado:  { label: 'SÃ¡bado',  color: 'var(--day-sab)',   bg: 'rgba(231,76,60,0.12)' },
     domingo: { label: 'Domingo', color: 'var(--day-dom)',   bg: 'rgba(243,156,18,0.12)' },
 };
 
@@ -20,7 +20,7 @@ const DEFAULT_BLOCKS = [
     { id: genId(), title: 'Urgente',        colorVar: 'urgent',    tasks: [] },
     { id: genId(), title: 'Importante',     colorVar: 'important', tasks: [] },
     { id: genId(), title: 'Pode esperar',   colorVar: 'canwait',   tasks: [] },
-    { id: genId(), title: 'Tarefas rápidas', colorVar: 'quick',    tasks: [] },
+    { id: genId(), title: 'Tarefas rÃ¡pidas', colorVar: 'quick',    tasks: [] },
 ];
 
 const BLOCK_COLORS = ['urgent', 'important', 'canwait', 'quick', 'blue', 'teal', 'pink', 'gray', 'yellow', 'indigo'];
@@ -124,7 +124,7 @@ function convertTaskToSubtask(sourceTaskId, targetTask) {
     refreshTaskCard(targetTask);
 
     const removedFields = ['a data'];
-    if (sourceTask.important) removedFields.push('a importância');
+    if (sourceTask.important) removedFields.push('a importÃ¢ncia');
     showToast(`Tarefa convertida em subtarefa. Foi removida ${removedFields.join(' e ')}.`);
     return true;
 }
@@ -272,8 +272,8 @@ async function loadState() {
                     normalizeOrganizerTaskImportance();
                     window.FocusCloud?.showStatus(
                         !cloudHasContent
-                            ? 'A cópia local foi preservada; a nuvem estava vazia'
-                            : 'Alterações locais mais recentes foram preservadas',
+                            ? 'A cÃ³pia local foi preservada; a nuvem estava vazia'
+                            : 'AlteraÃ§Ãµes locais mais recentes foram preservadas',
                         'warning'
                     );
                     return true;
@@ -294,7 +294,7 @@ async function loadState() {
             }
         } catch (e) {
             console.error('Failed to load cloud state:', e);
-            window.FocusCloud.showStatus('Usando a cópia local', 'warning');
+            window.FocusCloud.showStatus('Usando a cÃ³pia local', 'warning');
         }
     }
 
@@ -495,7 +495,7 @@ function renderTaskCard(task, options = {}) {
         e.stopPropagation();
         task.important = !task.important;
         importantBtn.setAttribute('aria-pressed', String(task.important));
-        importantBtn.title = task.important ? 'Remover importância' : 'Marcar como importante';
+        importantBtn.title = task.important ? 'Remover importÃ¢ncia' : 'Marcar como importante';
         importantBtn.setAttribute('aria-label', importantBtn.title);
         saveState();
         refreshTaskVisibility();
@@ -694,7 +694,7 @@ function toggleDayPicker(task, card) {
             item.type = 'button';
             item.className = 'day-picker-item';
             item.setAttribute('aria-pressed', String(isActive));
-            item.innerHTML = `<span class="picker-dot" style="background:${isActive ? cfg.color : 'var(--border)'}"></span>${cfg.label}${isActive ? ' ✓' : ''}`;
+            item.innerHTML = `<span class="picker-dot" style="background:${isActive ? cfg.color : 'var(--border)'}"></span>${cfg.label}${isActive ? ' âœ“' : ''}`;
             item.addEventListener('click', (e) => {
                 e.stopPropagation();
                 setDraftDate(key, getDateForKey(key));
@@ -844,7 +844,7 @@ function renderBlock(block, options = {}) {
     }
 
     card.addEventListener('dragstart', (e) => {
-        // Se o drag foi iniciado em um input ou botão, não arrastar o bloco
+        // Se o drag foi iniciado em um input ou botÃ£o, nÃ£o arrastar o bloco
         if (e.target.closest('input, textarea, button') || card.querySelector('.task-text-input')) {
             e.preventDefault();
             return;
@@ -915,7 +915,7 @@ function renderBlock(block, options = {}) {
     titleInput.className = 'block-title';
     titleInput.value = block.title;
     titleInput.addEventListener('change', () => {
-        block.title = titleInput.value.trim() || 'Sem Título';
+        block.title = titleInput.value.trim() || 'Sem TÃ­tulo';
         saveState();
     });
     titleInput.addEventListener('blur', () => {
@@ -1091,7 +1091,7 @@ async function deleteBlock(blockId) {
     if (block.tasks.length > 0) {
         const confirmed = await showModal(
             'Remover bloco',
-            `O bloco "${block.title}" tem ${block.tasks.length} tarefa(s). As tarefas serão movidas de volta para o Inbox. Deseja continuar?`
+            `O bloco "${block.title}" tem ${block.tasks.length} tarefa(s). As tarefas serÃ£o movidas de volta para o Inbox. Deseja continuar?`
         );
         if (!confirmed) return;
         // Move tasks back to inbox
@@ -1125,7 +1125,7 @@ function addBlock() {
 function focusOnBlock(block) {
     const incompleteTasks = block.tasks.filter(t => !t.completed);
     if (incompleteTasks.length === 0) {
-        alert('Não há tarefas pendentes neste bloco.');
+        alert('NÃ£o hÃ¡ tarefas pendentes neste bloco.');
         return;
     }
     // Save tasks to shared localStorage for Focus app
@@ -1142,7 +1142,7 @@ function focusOnBlock(block) {
         localStorage.setItem(FOCUS_HANDOFF_KEY, JSON.stringify(focusState));
     }
     window.FocusCloud?.scheduleFocusSave(focusState);
-    window.location.href = 'index.html?mode=focus';
+    window.location.href = 'index.html?mode=focus&from=organizer';
 }
 
 function getTasksForLocation(location) {
@@ -1246,7 +1246,7 @@ function updateWeekdayFilterLabel() {
     const toggle = document.getElementById('weekday-filter-toggle');
     const label = document.getElementById('weekday-filter-label');
     if (!toggle || !label) return;
-    const labels = { segunda: 'Segunda', terca: 'Terça', quarta: 'Quarta', quinta: 'Quinta', sexta: 'Sexta', sabado: 'Sábado', domingo: 'Domingo' };
+    const labels = { segunda: 'Segunda', terca: 'TerÃ§a', quarta: 'Quarta', quinta: 'Quinta', sexta: 'Sexta', sabado: 'SÃ¡bado', domingo: 'Domingo' };
     label.textContent = labels[state.activeFilter] ? `Dias: ${labels[state.activeFilter]}` : 'Dias da semana';
 }
 
@@ -1446,7 +1446,7 @@ function enableFilterOrdering(enabled) {
     document.querySelectorAll('.filter-orderable').forEach(item => item.draggable = enabled);
     const button = document.getElementById('btn-organize-filters');
     button.classList.toggle('active', enabled);
-    button.title = enabled ? 'Concluir organização' : 'Organizar filtros';
+    button.title = enabled ? 'Concluir organizaÃ§Ã£o' : 'Organizar filtros';
     button.setAttribute('aria-label', button.title);
 }
 document.getElementById('btn-organize-filters').addEventListener('click', (e) => { e.stopPropagation(); enableFilterOrdering(!organizingFilters); });
@@ -1508,14 +1508,14 @@ function extractDayFromText(text) {
     if (!text) return null;
     const lower = text.toLowerCase();
     if (/\b(hoje|meu\s+dia)\b/.test(lower)) return 'hoje';
-    if (/\b(amanhã|amanha)\b/.test(lower)) return 'amanha';
+    if (/\b(amanhÃ£|amanha)\b/.test(lower)) return 'amanha';
     if (/\b(dom|domingo)\b/.test(lower)) return 'domingo';
     if (/\b(seg|segunda(-feira)?)\b/.test(lower)) return 'segunda';
-    if (/\b(ter|terça|terca(-feira)?)\b/.test(lower)) return 'terca';
+    if (/\b(ter|terÃ§a|terca(-feira)?)\b/.test(lower)) return 'terca';
     if (/\b(qua|quarta(-feira)?)\b/.test(lower)) return 'quarta';
     if (/\b(qui|quinta(-feira)?)\b/.test(lower)) return 'quinta';
     if (/\b(sex|sexta(-feira)?)\b/.test(lower)) return 'sexta';
-    if (/\b(sáb|sab|sábado|sabado)\b/.test(lower)) return 'sabado';
+    if (/\b(sÃ¡b|sab|sÃ¡bado|sabado)\b/.test(lower)) return 'sabado';
     return null;
 }
 
@@ -1531,7 +1531,7 @@ async function processPdfFile(file) {
     try {
         const arrayBuffer = await file.arrayBuffer();
         if (!window.pdfjsLib) {
-            throw new Error('Biblioteca PDF.js não carregada');
+            throw new Error('Biblioteca PDF.js nÃ£o carregada');
         }
 
         const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
@@ -1550,7 +1550,7 @@ async function processPdfFile(file) {
         parsedPdfTasks = parseToDoLines(pagesLines);
 
         if (parsedPdfTasks.length === 0) {
-            alert('Nenhuma tarefa foi identificada no PDF. Verifique se é uma lista impressa do Microsoft To Do.');
+            alert('Nenhuma tarefa foi identificada no PDF. Verifique se Ã© uma lista impressa do Microsoft To Do.');
             return;
         }
 
@@ -1562,8 +1562,8 @@ async function processPdfFile(file) {
 }
 
 function extractToDoPdfPageLines(items, page, pageHeight) {
-    // O PDF do To Do codifica os ícones em fontes próprias. Em vez de
-    // depender do caractere do ícone, usamos a indentação do texto.
+    // O PDF do To Do codifica os Ã­cones em fontes prÃ³prias. Em vez de
+    // depender do caractere do Ã­cone, usamos a indentaÃ§Ã£o do texto.
     const iconFonts = new Set(items
         .filter(item => /[\uE000-\uF8FF]/u.test(item.str || ''))
         .map(item => item.fontName));
@@ -1575,9 +1575,9 @@ function extractToDoPdfPageLines(items, page, pageHeight) {
         const size = Math.hypot(item.transform[0], item.transform[1]);
         const x = item.transform[4];
         const y = item.transform[5];
-        // Checkboxes são símbolos curtos na margem esquerda, não texto.
-        // Os marcadores maiores pertencem às subtarefas; guardamos apenas
-        // sua posição para distinguir o início de um texto quebrado.
+        // Checkboxes sÃ£o sÃ­mbolos curtos na margem esquerda, nÃ£o texto.
+        // Os marcadores maiores pertencem Ã s subtarefas; guardamos apenas
+        // sua posiÃ§Ã£o para distinguir o inÃ­cio de um texto quebrado.
         if (item.str.trim().length === 1 && x < 100 && size >= 14) {
             if (size >= 16) subtaskMarkerYs.push(y);
             return;
@@ -1607,7 +1607,7 @@ function extractToDoPdfPageLines(items, page, pageHeight) {
         });
         text = text.trim();
         if (!text) return [];
-        const isHeader = row.y > pageHeight * 0.88 && (/^tarefas\b/i.test(text) || /\d{1,2}\s+de\s+[a-zç]+\s+de\s+\d{4}/i.test(text));
+        const isHeader = row.y > pageHeight * 0.88 && (/^tarefas\b/i.test(text) || /\d{1,2}\s+de\s+[a-zÃ§]+\s+de\s+\d{4}/i.test(text));
         const isFooter = row.y < pageHeight * 0.09 || /Impressa com o Microsoft To Do/i.test(text);
         if (isHeader || isFooter) return [];
         const startsSubtask = subtaskStartRows.has(row);
@@ -1677,7 +1677,7 @@ function parseToDoLines(lines) {
 function openPdfImportModal() {
     selectedPreviewKeys.clear();
 
-    // Pré-selecionar todas as tarefas e subtarefas
+    // PrÃ©-selecionar todas as tarefas e subtarefas
     parsedPdfTasks.forEach((task, tIdx) => {
         selectedPreviewKeys.add(`main_${tIdx}`);
         task.subtasks.forEach((_, sIdx) => {
@@ -1779,7 +1779,7 @@ function renderPdfPreview() {
 
                 const subText = document.createElement('div');
                 subText.className = 'pdf-preview-text';
-                subText.textContent = `↳ ${formattedText}`;
+                subText.textContent = `â†³ ${formattedText}`;
 
                 subItem.appendChild(subCheck);
                 subItem.appendChild(subText);
@@ -1808,7 +1808,7 @@ function renderPdfPreview() {
 
 function updatePreviewSelectedCount() {
     const count = selectedPreviewKeys.size;
-    document.getElementById('pdf-preview-count').textContent = `Pré-visualização (${count} selecionadas):`;
+    document.getElementById('pdf-preview-count').textContent = `PrÃ©-visualizaÃ§Ã£o (${count} selecionadas):`;
     pdfBtnConfirm.textContent = `Importar (${count}) para o Inbox`;
     btnToggleSelectAll.textContent = count > 0 ? 'Desmarcar todas' : 'Selecionar todas';
 }
@@ -1906,7 +1906,7 @@ pdfBtnConfirm.addEventListener('click', () => {
     saveState();
     refreshTaskContainerState({ type: 'inbox', blockId: null }, { animateNew: true });
     closePdfImportModal();
-    showToast(`✓ ${importedCount} tarefas importadas com sucesso para o Inbox!`);
+    showToast(`âœ“ ${importedCount} tarefas importadas com sucesso para o Inbox!`);
 });
 
 // ===========================
@@ -1967,7 +1967,7 @@ function setSidePanelMode(mode) {
     sidePanelOverlay.classList.toggle('active', isFocusMode);
     sidePanelModeButton.setAttribute('aria-pressed', String(isFocusMode));
     sidePanelModeButton.textContent = isFocusMode ? 'Comparar' : 'Foco';
-    sidePanelModeButton.title = isFocusMode ? 'Voltar ao modo comparação' : 'Ativar modo foco';
+    sidePanelModeButton.title = isFocusMode ? 'Voltar ao modo comparaÃ§Ã£o' : 'Ativar modo foco';
 }
 
 function openSidePanel(task) {
@@ -2197,3 +2197,4 @@ async function init() {
 }
 
 init();
+

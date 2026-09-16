@@ -1,4 +1,4 @@
-// Elementos do DOM
+﻿// Elementos do DOM
 const screenAdd = document.getElementById('screen-add');
 const screenFocus = document.getElementById('screen-focus');
 const screenDone = document.getElementById('screen-done');
@@ -34,7 +34,9 @@ let fromOrganizer = false;
 // Inicializar lendo do LocalStorage
 async function init() {
     initTheme();
-    const enterFocus = new URLSearchParams(window.location.search).get('mode') === 'focus';
+    const params = new URLSearchParams(window.location.search);
+    const enterFocus = params.get('mode') === 'focus';
+    const launchedFromOrganizer = params.get('from') === 'organizer';
     if (!enterFocus) {
         window.location.replace('organizer.html');
         return;
@@ -42,6 +44,12 @@ async function init() {
 
     const user = await window.FocusCloud?.requireUser();
     if (window.FocusCloud?.configured && !user) return;
+
+    if (!launchedFromOrganizer) {
+        clearState();
+        showScreen(screenAdd);
+        return;
+    }
 
     const localRecord = window.FocusCloud?.readLocalRecord
         ? window.FocusCloud.readLocalRecord('focusAppState')
@@ -63,11 +71,11 @@ async function init() {
                     reason: 'before-cloud-restore'
                 });
             } else if (localHasTasks && (!cloudHasTasks || localIsNewer)) {
-                window.FocusCloud.showStatus('A sessão local mais recente foi preservada', 'warning');
+                window.FocusCloud.showStatus('A sessÃ£o local mais recente foi preservada', 'warning');
             }
         } catch (error) {
-            console.error('Erro ao carregar sessão de foco da nuvem:', error);
-            window.FocusCloud.showStatus('Usando a cópia local', 'warning');
+            console.error('Erro ao carregar sessÃ£o de foco da nuvem:', error);
+            window.FocusCloud.showStatus('Usando a cÃ³pia local', 'warning');
         }
     }
     if (savedData) {
@@ -89,14 +97,14 @@ async function init() {
                 const percentage = ((current - 1) / total) * 100;
                 progressBar.style.width = `${percentage}%`;
                 
-                updateFocusView(false); // sem animação inicial forte
+                updateFocusView(false); // sem animaÃ§Ã£o inicial forte
                 return;
             }
         } catch (e) {
             console.error("Erro ao ler LocalStorage", e);
         }
     }
-    // Padrão: tela de adição
+    // PadrÃ£o: tela de adiÃ§Ã£o
     showScreen(screenAdd);
 }
 
@@ -192,7 +200,7 @@ function showScreen(screenEl) {
     }
     
     screenEl.style.display = 'flex';
-    // Pequeno delay para permitir a transição do display:flex
+    // Pequeno delay para permitir a transiÃ§Ã£o do display:flex
     setTimeout(() => {
         screenEl.classList.add('active');
     }, 10);
@@ -242,14 +250,14 @@ function updateFocusView(animate = true) {
     };
     
     if (animate) {
-        // Animação de saída
+        // AnimaÃ§Ã£o de saÃ­da
         currentTaskEl.style.opacity = 0;
         currentTaskEl.style.transform = 'translateY(10px)';
         document.getElementById('focus-subtasks').style.opacity = 0;
         
         setTimeout(() => {
             renderContent();
-            // Animação de entrada
+            // AnimaÃ§Ã£o de entrada
             currentTaskEl.style.opacity = 1;
             currentTaskEl.style.transform = 'translateY(0)';
             document.getElementById('focus-subtasks').style.opacity = 1;
@@ -313,7 +321,7 @@ btnUploadFile.addEventListener('click', () => {
 });
 
 btnPaste.addEventListener('click', () => {
-    alert('Use Ctrl+V para colar uma captura de tela com tarefas na página.');
+    alert('Use Ctrl+V para colar uma captura de tela com tarefas na pÃ¡gina.');
 });
 
 fileInput.addEventListener('change', async (event) => {
@@ -362,7 +370,7 @@ async function processImageFile(file) {
         const newTasks = parseTasksFromText(cleanedText);
 
         if (newTasks.length === 0) {
-            setOcrStatus('Não foi possível identificar tarefas na imagem.', true);
+            setOcrStatus('NÃ£o foi possÃ­vel identificar tarefas na imagem.', true);
             return;
         }
 
@@ -372,7 +380,7 @@ async function processImageFile(file) {
             .filter(line => line.length > 0);
 
         taskInput.value = [...currentTasks, ...newTasks].join('\n');
-        setOcrStatus(`Extraído ${newTasks.length} tarefas e inserido na caixa acima.`, false);
+        setOcrStatus(`ExtraÃ­do ${newTasks.length} tarefas e inserido na caixa acima.`, false);
     } catch (error) {
         console.error(error);
         setOcrStatus('Erro ao processar a imagem. Tente novamente.', true);
@@ -381,7 +389,7 @@ async function processImageFile(file) {
 
 function parseTasksFromText(text) {
     const lines = text
-        .split(/\r?\n|•|-|\d+\.|\)|\:/)
+        .split(/\r?\n|â€¢|-|\d+\.|\)|\:/)
         .map(line => line.trim())
         .filter(line => line.length > 2);
     return lines;
@@ -437,12 +445,12 @@ btnComplete.addEventListener('click', () => {
         // Completou tudo
         progressBar.style.width = '100%';
         
-        // Animação de saída da última tarefa antes de ir para a tela final
+        // AnimaÃ§Ã£o de saÃ­da da Ãºltima tarefa antes de ir para a tela final
         currentTaskEl.style.opacity = 0;
         currentTaskEl.style.transform = 'translateY(-10px)';
         
         setTimeout(() => {
-            doneMessage.textContent = `Você concluiu todas as ${tasks.length} tarefas!`;
+            doneMessage.textContent = `VocÃª concluiu todas as ${tasks.length} tarefas!`;
             clearState();
             showScreen(screenDone);
         }, 400);
@@ -450,7 +458,7 @@ btnComplete.addEventListener('click', () => {
 });
 
 btnSkip.addEventListener('click', () => {
-    // Só pula se não for a última tarefa da lista
+    // SÃ³ pula se nÃ£o for a Ãºltima tarefa da lista
     if (currentIndex < tasks.length - 1) {
         // Remove a tarefa atual e coloca no final da lista
         const skippedTask = tasks.splice(currentIndex, 1)[0];
@@ -488,3 +496,4 @@ btnResume.addEventListener('click', () => {
 
 // Inicia o app
 init();
+
