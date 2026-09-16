@@ -1184,11 +1184,40 @@
             background: var(--bg-secondary);
         }
 
+        .day-picker-item[aria-pressed="true"] {
+            background: var(--primary-light);
+        }
+
         .day-picker-item .picker-dot {
             width: 8px;
             height: 8px;
             border-radius: 50%;
             flex-shrink: 0;
+        }
+
+        .day-picker-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 6px;
+            padding: 8px 4px 2px;
+            border-top: 1px solid var(--border-light);
+            margin-top: 6px;
+        }
+
+        .day-picker-action {
+            border: 1px solid var(--border);
+            border-radius: var(--radius-xs);
+            padding: 5px 9px;
+            background: transparent;
+            color: var(--text-secondary);
+            font: 600 11px var(--font);
+            cursor: pointer;
+        }
+
+        .day-picker-action.confirm {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
         }
 
         /* ========== CONFIRMATION MODAL ========== */
@@ -2648,94 +2677,108 @@
             return `${y}-${m}-${dateStr}`;
         }
 
+        function getCategoryForDate(dateString) {
+            if (!dateString) return null;
+            const [year, month, day] = dateString.split('-').map(Number);
+            const selectedDate = new Date(year, month - 1, day);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const diffDays = Math.round((selectedDate.getTime() - today.getTime()) / 86400000);
+            if (diffDays === 0) return 'hoje';
+            if (diffDays === 1) return 'amanha';
+            return ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'][selectedDate.getDay()];
+        }
+
         function toggleDayPicker(task, card) {
-            // Close any existing picker
             document.querySelectorAll('.day-picker.open').forEach(p => p.remove());
 
             const picker = document.createElement('div');
             picker.className = 'day-picker open';
+            let draftDays = [...task.days];
+            let dateInput;
 
-            Object.entries(DAY_CONFIG).forEach(([key, cfg]) => {
-                const item = document.createElement('button');
-                item.className = 'day-picker-item';
-                const isActive = task.days.includes(key);
-                item.innerHTML = `<span class="picker-dot" style="background:${isActive ? cfg.color : 'var(--border)'}"></span>${cfg.label}${isActive ? ' ✓' : ''}`;
-                item.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    const exactDate = getDateForKey(key);
-                    if (task.days.includes(key)) {
-                        task.days = task.days.filter(d => d !== key);
-                        if (exactDate) task.days = task.days.filter(d => d !== exactDate);
-                    } else {
-                        task.days.push(key);
-                        task.days = task.days.filter(d => !d.match(/^\d{4}-\d{2}-\d{2}$/)); // clear old exact dates
-                        if (exactDate) task.days.push(exactDate); // push the new exact date
-                    }
-                    saveState();
-                    picker.remove();
-                    refreshTaskCard(task);
+            const setDraftDate = (key, exactDate) => {
+                const isCurrentSelection = draftDays.includes(key) && draftDays.includes(exactDate);
+                draftDays = isCurrentSelection ? [] : [key, exactDate];
+                if (dateInput) dateInput.value = exactDate || '';
+                renderOptions();
+            };
+
+            const renderOptions = () => {
+                picker.querySelectorAll('.day-picker-item').forEach(item => item.remove());
+                const reference = dateInput || picker.firstChild;
+                Object.entries(DAY_CONFIG).forEach(([key, cfg]) => {
+                    const item = document.createElement('button');
+                    const isActive = draftDays.includes(key);
+                    item.type = 'button';
+                    item.className = 'day-picker-item';
+                    item.setAttribute('aria-pressed', String(isActive));
+                    item.innerHTML = `<span class="picker-dot" style="background:${isActive ? cfg.color : 'var(--border)'}"></span>${cfg.label}${isActive ? ' ✓' : ''}`;
+                    item.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        setDraftDate(key, getDateForKey(key));
+                    });
+                    picker.insertBefore(item, reference);
                 });
-                picker.appendChild(item);
-            });
+            };
 
-            // Add custom date input
-            const customDateKey = task.days.find(d => d.match(/^\d{4}-\d{2}-\d{2}$/));
-            const dateInput = document.createElement('input');
+            const customDateKey = draftDays.find(d => /^\d{4}-\d{2}-\d{2}$/.test(d));
+            dateInput = document.createElement('input');
             dateInput.type = 'date';
             dateInput.className = 'day-picker-date-input';
-            if (customDateKey) dateInput.value = customDateKey;
-
+            dateInput.value = customDateKey || '';
             dateInput.addEventListener('change', (e) => {
                 e.stopPropagation();
-                // Remove existing custom dates to keep at most one specific date (optional, but cleaner)
-                task.days = task.days.filter(d => !d.match(/^\d{4}-\d{2}-\d{2}$/));
-                if (dateInput.value) {
-                    const selectedStr = dateInput.value;
-                    task.days.push(selectedStr);
-
-                    const parts = selectedStr.split('-');
-                    const d = new Date(parts[0], parts[1] - 1, parts[2]);
-                    
-                    const today = new Date();
-                    today.setHours(0,0,0,0);
-                    
-                    const diffTime = d.getTime() - today.getTime();
-                    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
-                    
-                    const daysMap = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
-                    let categoryToAdd = null;
-
-                    if (diffDays === 0) {
-                        categoryToAdd = 'hoje';
-                    } else if (diffDays === 1) {
-                        categoryToAdd = 'amanha';
-                    } else {
-                        categoryToAdd = daysMap[d.getDay()];
-                    }
-
-                    if (categoryToAdd && !task.days.includes(categoryToAdd)) {
-                        task.days.push(categoryToAdd);
-                    }
-                }
-                saveState();
-                picker.remove();
-                refreshTaskCard(task);
+                const category = getCategoryForDate(dateInput.value);
+                draftDays = category && dateInput.value ? [category, dateInput.value] : [];
+                renderOptions();
             });
             dateInput.addEventListener('click', (e) => e.stopPropagation());
-
             picker.appendChild(dateInput);
+
+            const actions = document.createElement('div');
+            actions.className = 'day-picker-actions';
+            const cancelButton = document.createElement('button');
+            cancelButton.type = 'button';
+            cancelButton.className = 'day-picker-action';
+            cancelButton.textContent = 'Cancelar';
+            const confirmButton = document.createElement('button');
+            confirmButton.type = 'button';
+            confirmButton.className = 'day-picker-action confirm';
+            confirmButton.textContent = 'OK';
+            actions.append(cancelButton, confirmButton);
+            picker.appendChild(actions);
+            renderOptions();
 
             card.style.position = 'relative';
             card.appendChild(picker);
 
-            // Close on click outside
+            const close = () => {
+                picker.remove();
+                document.removeEventListener('click', closeHandler, true);
+                document.removeEventListener('keydown', escapeHandler, true);
+            };
             const closeHandler = (e) => {
-                if (!picker.contains(e.target)) {
-                    picker.remove();
-                    document.removeEventListener('click', closeHandler, true);
+                if (!picker.contains(e.target)) close();
+            };
+            const escapeHandler = (e) => {
+                if (e.key === 'Escape') {
+                    e.preventDefault();
+                    close();
                 }
             };
-            setTimeout(() => document.addEventListener('click', closeHandler, true), 10);
+
+            cancelButton.addEventListener('click', close);
+            confirmButton.addEventListener('click', () => {
+                task.days = draftDays;
+                saveState();
+                close();
+                refreshTaskCard(task);
+            });
+            setTimeout(() => {
+                document.addEventListener('click', closeHandler, true);
+                document.addEventListener('keydown', escapeHandler, true);
+            }, 10);
         }
 
         function findTaskLocation(taskId) {
