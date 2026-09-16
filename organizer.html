@@ -1785,6 +1785,31 @@
             transition: all 0.2s;
         }
 
+        .subtask-item.subtask-dragging {
+            opacity: 0.45;
+        }
+
+        .subtask-drag-handle {
+            width: 14px;
+            min-height: 18px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-tertiary);
+            cursor: grab;
+            flex-shrink: 0;
+            touch-action: none;
+        }
+
+        .subtask-drag-handle:active {
+            cursor: grabbing;
+        }
+
+        .subtask-drag-handle svg {
+            width: 14px;
+            height: 14px;
+        }
+
         .subtask-item:last-child {
             border-bottom: none;
         }
@@ -4005,6 +4030,7 @@
         // ===========================
         let currentEditingTask = null;
         let sidePanelMode = 'comparison';
+        let subtaskDragState = null;
         const sidePanel = document.getElementById('side-panel');
         const sidePanelOverlay = document.getElementById('side-panel-overlay');
         const sidePanelModeButton = document.getElementById('side-panel-mode');
@@ -4048,6 +4074,23 @@
             subtasks.forEach((subtask, index) => {
                 const item = document.createElement('div');
                 item.className = 'subtask-item' + (subtask.completed ? ' completed' : '');
+                item.dataset.subtaskId = subtask.id;
+
+                const dragHandle = document.createElement('span');
+                dragHandle.className = 'subtask-drag-handle';
+                dragHandle.setAttribute('draggable', 'true');
+                dragHandle.title = 'Arrastar para reordenar';
+                dragHandle.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="6" r="1"></circle><circle cx="15" cy="6" r="1"></circle><circle cx="9" cy="12" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="9" cy="18" r="1"></circle><circle cx="15" cy="18" r="1"></circle></svg>';
+                dragHandle.addEventListener('dragstart', (e) => {
+                    subtaskDragState = { subtaskId: subtask.id, taskId: currentEditingTask.id };
+                    item.classList.add('subtask-dragging');
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.setData('text/plain', subtask.id);
+                });
+                dragHandle.addEventListener('dragend', () => {
+                    item.classList.remove('subtask-dragging');
+                    subtaskDragState = null;
+                });
                 
                 const checkbox = document.createElement('div');
                 checkbox.className = 'subtask-checkbox' + (subtask.completed ? ' completed' : '');
@@ -4135,12 +4178,45 @@
                 actions.appendChild(promoteBtn);
                 actions.appendChild(delBtn);
 
+                item.appendChild(dragHandle);
                 item.appendChild(checkbox);
                 item.appendChild(textEl);
                 item.appendChild(actions);
                 subtaskListEl.appendChild(item);
             });
         }
+
+        function getSubtaskDragAfterElement(container, y) {
+            return [...container.querySelectorAll('.subtask-item:not(.subtask-dragging)')].reduce((closest, item) => {
+                const box = item.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+                return offset < 0 && offset > closest.offset ? { offset, element: item } : closest;
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+
+        subtaskListEl.addEventListener('dragover', (e) => {
+            if (!subtaskDragState || subtaskDragState.taskId !== currentEditingTask?.id) return;
+            e.preventDefault();
+            const draggingItem = subtaskListEl.querySelector('.subtask-dragging');
+            const afterElement = getSubtaskDragAfterElement(subtaskListEl, e.clientY);
+            if (draggingItem && afterElement !== draggingItem) {
+                subtaskListEl.insertBefore(draggingItem, afterElement || null);
+            }
+        });
+
+        subtaskListEl.addEventListener('drop', (e) => {
+            if (!subtaskDragState || subtaskDragState.taskId !== currentEditingTask?.id) return;
+            e.preventDefault();
+            const subtasksById = new Map(currentEditingTask.subtasks.map(subtask => [subtask.id, subtask]));
+            const reorderedSubtasks = [...subtaskListEl.querySelectorAll('.subtask-item')]
+                .map(item => subtasksById.get(item.dataset.subtaskId))
+                .filter(Boolean);
+            const orderChanged = reorderedSubtasks.some((subtask, index) => subtask.id !== currentEditingTask.subtasks[index]?.id);
+            if (orderChanged) {
+                currentEditingTask.subtasks = reorderedSubtasks;
+                saveState();
+            }
+        });
 
         subtaskInputEl.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && currentEditingTask) {
