@@ -1,3 +1,12 @@
+.focus-theme-logo { display:block; height:auto; object-fit:contain; }
+.focus-logo-dark { display:none; }
+html[data-theme="dark"] .focus-logo-light { display:none; }
+html[data-theme="dark"] .focus-logo-dark { display:block; }
+@media (prefers-color-scheme: dark) {
+    html:not([data-theme="light"]) .focus-logo-light { display:none; }
+    html:not([data-theme="light"]) .focus-logo-dark { display:block; }
+}
+
 .focus-account-menu {
     position: relative;
     z-index: 10000;

@@ -215,23 +215,8 @@ body {
     gap: 12px;
 }
 
-.header-logo {
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
-    box-shadow: var(--shadow-sm);
-}
-
-.header-title {
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--text);
-    letter-spacing: -0.3px;
-}
-
-.header-title span {
-    color: var(--primary);
-}
+.focus-brand-logo { display:flex; align-items:center; }
+.focus-brand-logo .focus-theme-logo { width:150px; max-height:42px; }
 
 .header-actions {
     display: flex;

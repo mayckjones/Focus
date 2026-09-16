@@ -112,6 +112,13 @@ body:has(#screen-focus.active) .container {
     border-radius: 16px;
 }
 
+.logo-container .focus-theme-logo {
+    width: min(100%, 320px);
+    height: auto;
+    border-radius: 0;
+    box-shadow: none;
+}
+
 .title {
     font-size: 24px;
     font-weight: 600;

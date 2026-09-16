@@ -2,8 +2,8 @@
 * { box-sizing: border-box; }
 body { min-height: 100vh; margin: 0; display: grid; place-items: center; padding: 20px; color: var(--text); background: radial-gradient(circle at 10% 10%, rgba(0,120,212,.17), transparent 30rem), #f0f2f5; font-family: Inter, "Segoe UI", system-ui, sans-serif; }
 .card { width: min(440px, 100%); padding: 34px; background: #fff; border: 1px solid #e5e7eb; border-radius: 22px; box-shadow: 0 24px 70px rgba(20,40,60,.14); }
-.brand { display: flex; align-items: center; gap: 12px; margin-bottom: 30px; font-weight: 800; }
-.brand img { width: 42px; height: 42px; border-radius: 12px; }
+.brand { display: flex; align-items: center; margin-bottom: 30px; font-weight: 800; }
+.brand .focus-theme-logo { width: min(270px, 100%); height: auto; }
 h1 { margin: 0; font-size: 28px; letter-spacing: -.04em; }
 .subtitle { margin: 7px 0 26px; color: var(--muted); }
 .tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 24px; padding: 5px; background: #f3f4f6; border-radius: 12px; }
