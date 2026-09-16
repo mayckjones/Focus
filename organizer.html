@@ -87,6 +87,9 @@
             --radius-sm: 8px;
             --radius-xs: 6px;
             --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            --motion-fast: 120ms;
+            --motion-base: 180ms;
+            --motion-ease: cubic-bezier(0.2, 0, 0, 1);
 
             /* Glass */
             --glass-bg: rgba(255,255,255,0.7);
@@ -425,17 +428,42 @@
             border: 1px solid var(--glass-border);
             border-radius: var(--radius);
             box-shadow: var(--shadow-sm);
-            transition: all var(--transition);
+            transition: border-color var(--motion-base) var(--motion-ease),
+                        box-shadow var(--motion-base) var(--motion-ease),
+                        background-color var(--motion-base) var(--motion-ease),
+                        opacity var(--motion-fast) ease,
+                        transform var(--motion-base) var(--motion-ease);
             overflow: hidden;
         }
 
         .block-card:hover {
             box-shadow: var(--shadow-md);
+            background: var(--surface);
         }
 
         .block-card.drag-over {
             border-color: var(--primary);
             box-shadow: var(--shadow-glow);
+        }
+
+        .block-card.dragging-block {
+            opacity: 0.55;
+            transform: scale(0.995);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .block-card.block-entering {
+            animation: blockEnter var(--motion-base) var(--motion-ease) both;
+        }
+
+        .block-card.block-removing {
+            opacity: 0;
+            transform: scale(0.985);
+        }
+
+        @keyframes blockEnter {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .block-header {
@@ -837,16 +865,27 @@
             border: 1px solid var(--border-light);
             border-radius: var(--radius-sm);
             cursor: default;
-            transition: border-color var(--transition), box-shadow var(--transition), background var(--transition);
+            transition: border-color var(--motion-fast) ease,
+                        box-shadow var(--motion-fast) ease,
+                        background-color var(--motion-base) ease,
+                        color var(--motion-base) ease,
+                        opacity var(--motion-fast) ease,
+                        transform var(--motion-base) var(--motion-ease),
+                        height var(--motion-base) var(--motion-ease),
+                        padding var(--motion-base) var(--motion-ease),
+                        border-width var(--motion-base) var(--motion-ease);
             position: relative;
             user-select: none;
-            animation: fadeSlideIn 0.25s ease;
         }
 
-        @keyframes fadeSlideIn {
+        .task-card.task-entering {
+            animation: taskEnter var(--motion-base) var(--motion-ease) both;
+        }
+
+        @keyframes taskEnter {
             from {
                 opacity: 0;
-                transform: translateY(-6px);
+                transform: translateY(-4px);
             }
             to {
                 opacity: 1;
@@ -857,12 +896,26 @@
         .task-card:hover {
             border-color: var(--border);
             box-shadow: var(--shadow-sm);
+            background: var(--surface-hover);
         }
 
         .task-card.dragging {
-            opacity: 0.4;
+            opacity: 0.55;
             cursor: default;
             animation: none;
+            transform: scale(0.99);
+            box-shadow: var(--shadow-md);
+        }
+
+        .task-card.task-removing {
+            opacity: 0;
+            height: 0 !important;
+            padding-top: 0;
+            padding-bottom: 0;
+            border-width: 0;
+            overflow: hidden;
+            transform: translateX(8px);
+            pointer-events: none;
         }
 
         .block-card,
@@ -904,7 +957,9 @@
             border-radius: 50%;
             flex-shrink: 0;
             cursor: pointer;
-            transition: all var(--transition);
+            transition: border-color var(--motion-fast) ease,
+                        background-color var(--motion-base) ease,
+                        transform var(--motion-fast) ease;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -913,6 +968,10 @@
 
         .task-checkbox:hover {
             border-color: var(--primary);
+        }
+
+        .task-checkbox:active {
+            transform: scale(0.88);
         }
 
         .task-card.completed .task-checkbox {
@@ -1004,12 +1063,18 @@
             align-items: center;
             gap: 2px;
             opacity: 0;
-            transition: opacity var(--transition);
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity var(--motion-fast) ease, visibility 0s linear var(--motion-fast);
             flex-shrink: 0;
         }
 
-        .task-card:hover .task-actions {
+        .task-card:hover .task-actions,
+        .task-card:focus-within .task-actions {
             opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+            transition-delay: 0s;
         }
 
         .task-action-btn {
@@ -1023,12 +1088,31 @@
             color: var(--text-tertiary);
             border-radius: var(--radius-xs);
             cursor: pointer;
-            transition: all var(--transition);
+            transition: color var(--motion-fast) ease,
+                        background-color var(--motion-fast) ease,
+                        transform var(--motion-fast) ease;
         }
 
         .task-action-btn:hover {
             background: var(--bg-secondary);
             color: var(--text);
+        }
+
+        .task-action-btn:active,
+        .block-action-btn:active,
+        .header-btn:active,
+        .filter-chip:active,
+        .block-focus-btn:active,
+        .add-block-card:active {
+            transform: scale(0.96);
+        }
+
+        button:focus-visible,
+        a:focus-visible,
+        input:focus-visible,
+        textarea:focus-visible {
+            outline: 2px solid var(--primary);
+            outline-offset: 2px;
         }
 
         .task-action-btn.danger:hover {
@@ -1765,6 +1849,32 @@
             height: 12px;
         }
 
+        @media (hover: none) {
+            .task-actions,
+            .subtask-delete {
+                opacity: 1;
+                visibility: visible;
+                pointer-events: auto;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            html {
+                scroll-behavior: auto;
+            }
+
+            .task-card,
+            .block-card,
+            .task-card.task-entering,
+            .block-card.block-entering,
+            .side-panel,
+            .modal-overlay,
+            .day-picker {
+                animation: none !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
         /* Responsive */
         @media (max-width: 900px) {
             .main {
@@ -2050,14 +2160,49 @@
             if (indicator) indicator.classList.add(after ? 'drop-after' : 'drop-before');
         }
 
+        function prefersReducedMotion() {
+            return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        }
+
+        function captureLayout(selector) {
+            const positions = new Map();
+            if (prefersReducedMotion()) return positions;
+            document.querySelectorAll(selector).forEach(element => {
+                positions.set(element, element.getBoundingClientRect());
+            });
+            return positions;
+        }
+
+        function animateLayoutFrom(positions) {
+            if (positions.size === 0) return;
+            requestAnimationFrame(() => {
+                positions.forEach((before, element) => {
+                    if (!element.isConnected || typeof element.animate !== 'function') return;
+                    const after = element.getBoundingClientRect();
+                    const deltaX = before.left - after.left;
+                    const deltaY = before.top - after.top;
+                    if (Math.abs(deltaX) < 1 && Math.abs(deltaY) < 1) return;
+                    element.animate(
+                        [
+                            { transform: `translate(${deltaX}px, ${deltaY}px)` },
+                            { transform: 'translate(0, 0)' }
+                        ],
+                        { duration: 180, easing: 'cubic-bezier(0.2, 0, 0, 1)' }
+                    );
+                });
+            });
+        }
+
         function commitDrop(e) {
             if (!dragData || !pendingDrop) return;
             e.preventDefault();
             e.stopPropagation();
+            const positions = captureLayout(dragData.blockId ? '.block-card' : '.task-card:not(.hidden-by-filter)');
             const dragging = document.querySelector(dragData.blockId ? '.dragging-block' : '.dragging');
             const { container, before } = pendingDrop;
             if (dragging && before !== dragging) container.insertBefore(dragging, before || null);
             clearAllDragOver();
+            animateLayoutFrom(positions);
         }
 
         // ===========================
@@ -2276,11 +2421,16 @@
             return true;
         }
 
-        function renderTaskCard(task) {
+        function renderTaskCard(task, options = {}) {
             const card = document.createElement('div');
             card.className = 'task-card' + (task.completed ? ' completed' : '');
             card.setAttribute('draggable', 'true');
             card.dataset.taskId = task.id;
+
+            if (options.animateEntry && !prefersReducedMotion()) {
+                card.classList.add('task-entering');
+                card.addEventListener('animationend', () => card.classList.remove('task-entering'), { once: true });
+            }
 
             card.classList.toggle('hidden-by-filter', !taskMatchesCurrentView(task));
 
@@ -2292,7 +2442,7 @@
                 e.stopPropagation();
                 task.completed = !task.completed;
                 saveState();
-                refreshTaskCard(task);
+                card.classList.toggle('completed', task.completed);
             });
 
             // Content
@@ -2419,16 +2569,11 @@
                 };
                 e.dataTransfer.effectAllowed = 'move';
                 e.dataTransfer.setData('text/plain', task.id);
-                // Delay to let browser capture drag image
-                requestAnimationFrame(() => {
-                    card.style.opacity = '0.4';
-                });
             });
 
             card.addEventListener('dragend', (e) => {
                 e.stopPropagation();
                 card.classList.remove('dragging');
-                card.style.opacity = '';
                 dragData = null;
                 clearAllDragOver();
                 rebuildStateFromDOM();
@@ -2615,13 +2760,30 @@
             return null;
         }
 
+        function animateRemoval(element, className, onComplete) {
+            if (!element || prefersReducedMotion()) {
+                if (element) element.remove();
+                onComplete();
+                return;
+            }
+
+            if (className === 'task-removing') {
+                element.style.height = `${element.offsetHeight}px`;
+            }
+            element.getBoundingClientRect();
+            requestAnimationFrame(() => element.classList.add(className));
+            window.setTimeout(() => {
+                element.remove();
+                onComplete();
+            }, 190);
+        }
+
         function deleteTask(taskId) {
             const location = findTaskLocation(taskId);
             removeTaskFromSource(taskId);
             saveState();
             const card = document.querySelector(`.task-card[data-task-id="${taskId}"]`);
-            if (card) card.remove();
-            refreshTaskContainerState(location);
+            animateRemoval(card, 'task-removing', () => refreshTaskContainerState(location));
         }
 
         // ===========================
@@ -2635,7 +2797,7 @@
             };
         }
 
-        function renderBlock(block) {
+        function renderBlock(block, options = {}) {
             const colors = getBlockCSSVars(block.colorVar);
 
             const card = document.createElement('div');
@@ -2644,6 +2806,11 @@
             card.setAttribute('draggable', 'true');
             card.style.borderTopColor = colors.dot;
             card.style.borderTopWidth = '3px';
+
+            if (options.animateEntry && !prefersReducedMotion()) {
+                card.classList.add('block-entering');
+                card.addEventListener('animationend', () => card.classList.remove('block-entering'), { once: true });
+            }
 
             card.addEventListener('dragstart', (e) => {
                 // Se o drag foi iniciado em um input ou botão, não arrastar o bloco
@@ -2655,14 +2822,10 @@
                 dragData = { blockId: block.id };
                 e.dataTransfer.effectAllowed = 'move';
                 e.dataTransfer.setData('text/plain', block.id);
-                requestAnimationFrame(() => {
-                    card.style.opacity = '0.5';
-                });
             });
 
             card.addEventListener('dragend', () => {
                 card.classList.remove('dragging-block');
-                card.style.opacity = '';
                 dragData = null;
                 clearAllDragOver();
                 rebuildStateFromDOM();
@@ -2811,7 +2974,7 @@
                     block.tasks.push(newTask);
                     saveState();
                     quickAddInput.value = '';
-                    refreshTaskContainerState({ type: 'block', blockId: block.id });
+                    refreshTaskContainerState({ type: 'block', blockId: block.id }, { animateNew: true });
                     quickAddInput.focus();
                 }
             });
@@ -2837,7 +3000,7 @@
                     block.tasks.push(newTask);
                     saveState();
                     quickAddInput.value = '';
-                    refreshTaskContainerState({ type: 'block', blockId: block.id });
+                    refreshTaskContainerState({ type: 'block', blockId: block.id }, { animateNew: true });
                     quickAddInput.focus();
                 }
             });
@@ -2907,8 +3070,9 @@
             state.blocks = state.blocks.filter(b => b.id !== blockId);
             saveState();
             const blockCard = document.querySelector(`.block-card[data-block-id="${blockId}"]`);
-            if (blockCard) blockCard.remove();
-            refreshTaskContainerState({ type: 'inbox', blockId: null });
+            animateRemoval(blockCard, 'block-removing', () => {
+                refreshTaskContainerState({ type: 'inbox', blockId: null }, { animateNew: true });
+            });
         }
 
         function addBlock() {
@@ -2924,7 +3088,7 @@
             saveState();
             const blocksPanel = document.getElementById('blocks-panel');
             const addButton = blocksPanel.querySelector('.add-block-card');
-            blocksPanel.insertBefore(renderBlock(block), addButton || null);
+            blocksPanel.insertBefore(renderBlock(block, { animateEntry: true }), addButton || null);
         }
 
         function focusOnBlock(block) {
@@ -2974,7 +3138,7 @@
             container.appendChild(empty);
         }
 
-        function refreshTaskContainerState(location) {
+        function refreshTaskContainerState(location, options = {}) {
             const container = getTaskContainerForLocation(location);
             if (!container) return;
 
@@ -2987,7 +3151,7 @@
 
             tasks.forEach((task, index) => {
                 let card = container.querySelector(`.task-card[data-task-id="${task.id}"]`);
-                if (!card) card = renderTaskCard(task);
+                if (!card) card = renderTaskCard(task, { animateEntry: options.animateNew });
                 const cards = container.querySelectorAll('.task-card');
                 const cardAtIndex = cards[index];
                 if (cardAtIndex !== card) container.insertBefore(card, cardAtIndex || null);
@@ -3158,7 +3322,7 @@
             });
             if (lines.length > 0) {
                 saveState();
-                refreshTaskContainerState({ type: 'inbox', blockId: null });
+                refreshTaskContainerState({ type: 'inbox', blockId: null }, { animateNew: true });
             }
         }
 
@@ -3713,7 +3877,7 @@
             });
 
             saveState();
-            refreshTaskContainerState({ type: 'inbox', blockId: null });
+            refreshTaskContainerState({ type: 'inbox', blockId: null }, { animateNew: true });
             closePdfImportModal();
             showToast(`✓ ${importedCount} tarefas importadas com sucesso para o Inbox!`);
         });
@@ -3859,7 +4023,7 @@
                     saveState();
                     renderSubtasks();
                     refreshTaskCard(currentEditingTask);
-                    refreshTaskContainerState({ type: 'inbox', blockId: null });
+                    refreshTaskContainerState({ type: 'inbox', blockId: null }, { animateNew: true });
                 });
 
                 const delBtn = document.createElement('button');
