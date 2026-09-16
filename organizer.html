@@ -299,13 +299,15 @@
 
         /* ========== FILTER BAR ========== */
         .filter-bar {
+            position: relative;
+            z-index: 130;
             padding: 10px 24px;
             background: var(--surface);
             border-bottom: 1px solid var(--border-light);
             display: flex;
             align-items: center;
             gap: 8px;
-            overflow-x: auto;
+            overflow: visible;
             scrollbar-width: none;
         }
 
@@ -357,6 +359,42 @@
             height: 6px;
             border-radius: 50%;
             flex-shrink: 0;
+        }
+
+        .weekday-filter {
+            position: relative;
+        }
+
+        .weekday-filter-toggle svg {
+            width: 14px;
+            height: 14px;
+            flex-shrink: 0;
+        }
+
+        .weekday-filter-menu {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            z-index: 120;
+            display: none;
+            min-width: 146px;
+            padding: 5px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            box-shadow: var(--shadow-md);
+        }
+
+        .weekday-filter.open .weekday-filter-menu {
+            display: grid;
+            gap: 2px;
+        }
+
+        .weekday-filter-menu .filter-chip {
+            width: 100%;
+            border: 0;
+            border-radius: var(--radius-xs);
+            text-align: left;
         }
 
         .search-container {
@@ -2078,13 +2116,18 @@
         <button class="filter-chip" data-filter="atrasadas"><span class="chip-dot" style="background:var(--block-urgent)"></span>Atrasadas</button>
         <button class="filter-chip" data-filter="hoje"><span class="chip-dot" style="background:var(--day-hoje)"></span>Hoje</button>
         <button class="filter-chip" data-filter="amanha"><span class="chip-dot" style="background:var(--day-ter)"></span>Amanhã</button>
-        <button class="filter-chip" data-filter="segunda"><span class="chip-dot" style="background:var(--day-seg)"></span>Seg</button>
-        <button class="filter-chip" data-filter="terca"><span class="chip-dot" style="background:var(--day-ter)"></span>Ter</button>
-        <button class="filter-chip" data-filter="quarta"><span class="chip-dot" style="background:var(--day-qua)"></span>Qua</button>
-        <button class="filter-chip" data-filter="quinta"><span class="chip-dot" style="background:var(--day-qui)"></span>Qui</button>
-        <button class="filter-chip" data-filter="sexta"><span class="chip-dot" style="background:var(--day-sex)"></span>Sex</button>
-        <button class="filter-chip" data-filter="sabado"><span class="chip-dot" style="background:var(--day-sab)"></span>Sáb</button>
-        <button class="filter-chip" data-filter="domingo"><span class="chip-dot" style="background:var(--day-dom)"></span>Dom</button>
+        <div class="weekday-filter" id="weekday-filter">
+            <button class="filter-chip weekday-filter-toggle" id="weekday-filter-toggle" type="button" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"></rect><line x1="8" y1="2" x2="8" y2="6"></line><line x1="16" y1="2" x2="16" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg><span id="weekday-filter-label">Dias da semana</span></button>
+            <div class="weekday-filter-menu" id="weekday-filter-menu" role="menu" aria-label="Filtrar por dia da semana">
+                <button class="filter-chip" data-filter="segunda" role="menuitem"><span class="chip-dot" style="background:var(--day-seg)"></span>Segunda</button>
+                <button class="filter-chip" data-filter="terca" role="menuitem"><span class="chip-dot" style="background:var(--day-ter)"></span>Terça</button>
+                <button class="filter-chip" data-filter="quarta" role="menuitem"><span class="chip-dot" style="background:var(--day-qua)"></span>Quarta</button>
+                <button class="filter-chip" data-filter="quinta" role="menuitem"><span class="chip-dot" style="background:var(--day-qui)"></span>Quinta</button>
+                <button class="filter-chip" data-filter="sexta" role="menuitem"><span class="chip-dot" style="background:var(--day-sex)"></span>Sexta</button>
+                <button class="filter-chip" data-filter="sabado" role="menuitem"><span class="chip-dot" style="background:var(--day-sab)"></span>Sábado</button>
+                <button class="filter-chip" data-filter="domingo" role="menuitem"><span class="chip-dot" style="background:var(--day-dom)"></span>Domingo</button>
+            </div>
+        </div>
         <button class="filter-chip" data-filter="futuras"><span class="chip-dot" style="background:var(--text-tertiary)"></span>Futuras</button>
 
         <div class="search-container">
@@ -3439,6 +3482,15 @@
             document.querySelectorAll('.filter-chip').forEach(chip => {
                 chip.classList.toggle('active', chip.dataset.filter === state.activeFilter);
             });
+            updateWeekdayFilterLabel();
+        }
+
+        function updateWeekdayFilterLabel() {
+            const toggle = document.getElementById('weekday-filter-toggle');
+            const label = document.getElementById('weekday-filter-label');
+            if (!toggle || !label) return;
+            const labels = { segunda: 'Segunda', terca: 'Terça', quarta: 'Quarta', quinta: 'Quinta', sexta: 'Sexta', sabado: 'Sábado', domingo: 'Domingo' };
+            label.textContent = labels[state.activeFilter] ? `Dias: ${labels[state.activeFilter]}` : 'Dias da semana';
         }
 
         // ===========================
@@ -3500,6 +3552,7 @@
             document.querySelectorAll('.filter-chip').forEach(chip => {
                 chip.classList.toggle('active', chip.dataset.filter === state.activeFilter);
             });
+            updateWeekdayFilterLabel();
         }
 
         // ===========================
@@ -3598,11 +3651,27 @@
         // FILTER BAR
         // ===========================
         document.getElementById('filter-bar').addEventListener('click', (e) => {
+            const weekdayToggle = e.target.closest('#weekday-filter-toggle');
+            if (weekdayToggle) {
+                const weekdayFilter = document.getElementById('weekday-filter');
+                const isOpen = weekdayFilter.classList.toggle('open');
+                weekdayToggle.setAttribute('aria-expanded', String(isOpen));
+                return;
+            }
             const chip = e.target.closest('.filter-chip');
             if (!chip) return;
             state.activeFilter = chip.dataset.filter;
             saveState();
             refreshTaskVisibility();
+            document.getElementById('weekday-filter').classList.remove('open');
+            document.getElementById('weekday-filter-toggle').setAttribute('aria-expanded', 'false');
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('#weekday-filter')) {
+                document.getElementById('weekday-filter').classList.remove('open');
+                document.getElementById('weekday-filter-toggle').setAttribute('aria-expanded', 'false');
+            }
         });
 
         // ===========================
