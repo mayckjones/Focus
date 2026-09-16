@@ -13,6 +13,9 @@
 }
 
 [data-theme="dark"] {
+    --text: #E8EAED;
+    --muted: #9AA0A6;
+    --bg-secondary: #262A3A;
     --bg-color: #0F1117;
     --surface: #1E2130;
     --surface-alt: #262A3A;
@@ -535,3 +538,5 @@ textarea:focus {
 [data-theme="dark"] .paste-info {
     color: var(--text-muted);
 }
+
+

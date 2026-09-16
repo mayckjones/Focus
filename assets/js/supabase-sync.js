@@ -1,4 +1,4 @@
-(function () {
+﻿(function () {
     'use strict';
 
     const client = window.focusSupabase;
@@ -53,7 +53,7 @@
                 savedAt: metadataRaw ? JSON.parse(metadataRaw).savedAt || null : null
             };
         } catch (error) {
-            console.warn(`Não foi possível ler ${baseKey} localmente:`, error);
+            console.warn(`NÃ£o foi possÃ­vel ler ${baseKey} localmente:`, error);
             return { state: null, savedAt: null };
         }
     }
@@ -63,7 +63,7 @@
             const raw = localStorage.getItem(storageBackupsKey(baseKey));
             return raw ? JSON.parse(raw) : [];
         } catch (error) {
-            console.warn(`Não foi possível ler os backups de ${baseKey}:`, error);
+            console.warn(`NÃ£o foi possÃ­vel ler os backups de ${baseKey}:`, error);
             return [];
         }
     }
@@ -85,8 +85,8 @@
                 try {
                     localStorage.setItem(backupsKey, JSON.stringify(backups.slice(0, MAX_LOCAL_BACKUPS)));
                 } catch (backupError) {
-                    // O estado atual tem prioridade quando o limite do navegador é atingido.
-                    console.warn(`Não foi possível criar um backup local de ${baseKey}:`, backupError);
+                    // O estado atual tem prioridade quando o limite do navegador Ã© atingido.
+                    console.warn(`NÃ£o foi possÃ­vel criar um backup local de ${baseKey}:`, backupError);
                 }
             }
             try {
@@ -102,7 +102,7 @@
             }));
             return true;
         } catch (error) {
-            console.error(`Não foi possível salvar ${baseKey} localmente:`, error);
+            console.error(`NÃ£o foi possÃ­vel salvar ${baseKey} localmente:`, error);
             return false;
         }
     }
@@ -145,7 +145,7 @@
         if (currentUser) return currentUser;
 
         // getSession() retorna session=null normalmente quando o visitante ainda
-        // não entrou. getUser() produziria AuthSessionMissingError nesse cenário.
+        // nÃ£o entrou. getUser() produziria AuthSessionMissingError nesse cenÃ¡rio.
         const { data, error } = await client.auth.getSession();
         if (error) throw error;
         currentUser = data.session?.user || null;
@@ -169,8 +169,8 @@
             installAccountButton(user);
             return user;
         } catch (error) {
-            console.error('Erro ao verificar usuário:', error);
-            showCloudStatus('Não foi possível verificar sua conta', 'error');
+            console.error('Erro ao verificar usuÃ¡rio:', error);
+            showCloudStatus('NÃ£o foi possÃ­vel verificar sua conta', 'error');
             return null;
         }
     }
@@ -213,7 +213,7 @@
                 .select('updated_at')
                 .maybeSingle());
             if (!error && !data) {
-                const conflict = new Error('A nuvem possui uma versão mais recente. A cópia local foi preservada.');
+                const conflict = new Error('A nuvem possui uma versÃ£o mais recente. A cÃ³pia local foi preservada.');
                 conflict.code = 'FOCUS_SYNC_CONFLICT';
                 throw conflict;
             }
@@ -224,7 +224,7 @@
                 .select('updated_at')
                 .single());
             if (error?.code === '23505') {
-                const conflict = new Error('Outra aba criou uma versão na nuvem. A cópia local foi preservada.');
+                const conflict = new Error('Outra aba criou uma versÃ£o na nuvem. A cÃ³pia local foi preservada.');
                 conflict.code = 'FOCUS_SYNC_CONFLICT';
                 throw conflict;
             }
@@ -236,7 +236,7 @@
         }
         cloudRowExists = true;
         knownRemoteUpdatedAt = data?.updated_at || nextUpdatedAt;
-        // Salvamentos bem-sucedidos acontecem em silêncio para não interromper o fluxo.
+        // Salvamentos bem-sucedidos acontecem em silÃªncio para nÃ£o interromper o fluxo.
     }
 
     function enqueueCloudSave(values, expectedUserId) {
@@ -249,8 +249,8 @@
         console.error(`Erro ao salvar ${label} no Supabase:`, error);
         showCloudStatus(
             error?.code === 'FOCUS_SYNC_CONFLICT'
-                ? 'Conflito detectado: sua cópia local foi preservada'
-                : 'Salvo localmente; nuvem indisponível',
+                ? 'Conflito detectado: sua cÃ³pia local foi preservada'
+                : 'Salvo localmente; nuvem indisponÃ­vel',
             error?.code === 'FOCUS_SYNC_CONFLICT' ? 'warning' : 'error'
         );
     }
@@ -269,29 +269,12 @@
         }, 450);
     }
 
-    function scheduleFocusSave(state) {
-        if (!client || !currentUser) return;
-        const snapshot = clone(state);
-        const expectedUserId = currentUser.id;
-        window.clearTimeout(focusSaveTimer);
-        focusSaveTimer = window.setTimeout(async () => {
-            try {
-                await enqueueCloudSave({ focus_state: snapshot }, expectedUserId);
-            } catch (error) {
-                handleSaveError('sessão de foco', error);
-            }
-        }, 250);
+    function scheduleFocusSave() {
+        // Sessao de foco temporaria: nao persistir na nuvem.
     }
 
     async function clearFocusState() {
-        if (!client || !currentUser) return;
-        window.clearTimeout(focusSaveTimer);
-        const expectedUserId = currentUser.id;
-        try {
-            await enqueueCloudSave({ focus_state: {} }, expectedUserId);
-        } catch (error) {
-            handleSaveError('sessão de foco', error);
-        }
+        // Sessao de foco temporaria: nao persistir na nuvem.
     }
 
     function safeUserMetadata(metadata) {
@@ -318,7 +301,7 @@
             if (error) throw error;
             cloudState = data;
         } catch (error) {
-            console.warn('Não foi possível obter a cópia na nuvem para exportação:', error);
+            console.warn('NÃ£o foi possÃ­vel obter a cÃ³pia na nuvem para exportaÃ§Ã£o:', error);
         }
 
         const avatarPath = user.user_metadata?.avatar_path || null;
@@ -328,11 +311,11 @@
                 const { data, error } = await client.storage.from('focus-avatars').createSignedUrl(avatarPath, 60);
                 if (error) throw error;
                 const response = await fetch(data.signedUrl);
-                if (!response.ok) throw new Error(`Foto indisponível (${response.status})`);
+                if (!response.ok) throw new Error(`Foto indisponÃ­vel (${response.status})`);
                 const blob = await response.blob();
                 avatar = { path: avatarPath, type: blob.type || null, data_url: await readBlobAsDataUrl(blob) };
             } catch (error) {
-                console.warn('Não foi possível incluir a foto na exportação:', error);
+                console.warn('NÃ£o foi possÃ­vel incluir a foto na exportaÃ§Ã£o:', error);
                 avatar = { path: avatarPath, unavailable: true };
             }
         }
@@ -373,10 +356,10 @@
 
     function taskReportHtml(task) {
         const days = Array.isArray(task.days) && task.days.length
-            ? `<span class="days">${task.days.map(escapeHtml).join(' · ')}</span>` : '';
+            ? `<span class="days">${task.days.map(escapeHtml).join(' Â· ')}</span>` : '';
         const subtasks = Array.isArray(task.subtasks) && task.subtasks.length
-            ? `<ul class="subtasks">${task.subtasks.map(subtask => `<li class="${subtask.completed ? 'done' : ''}"><span class="check">${subtask.completed ? '✓' : ''}</span>${escapeHtml(subtask.text)}</li>`).join('')}</ul>` : '';
-        return `<li class="task ${task.completed ? 'done' : ''}"><div class="task-line"><span class="check">${task.completed ? '✓' : ''}</span><span class="task-text">${escapeHtml(task.text)}</span>${task.important ? '<span class="important" title="Importante">★</span>' : ''}${days}</div>${subtasks}</li>`;
+            ? `<ul class="subtasks">${task.subtasks.map(subtask => `<li class="${subtask.completed ? 'done' : ''}"><span class="check">${subtask.completed ? 'âœ“' : ''}</span>${escapeHtml(subtask.text)}</li>`).join('')}</ul>` : '';
+        return `<li class="task ${task.completed ? 'done' : ''}"><div class="task-line"><span class="check">${task.completed ? 'âœ“' : ''}</span><span class="task-text">${escapeHtml(task.text)}</span>${task.important ? '<span class="important" title="Importante">â˜…</span>' : ''}${days}</div>${subtasks}</li>`;
     }
 
     function taskGroupReportHtml(title, tasks) {
@@ -390,10 +373,10 @@
         const focus = exportData.focus_state || {};
         const photo = exportData.profile_photo?.data_url ? `<img class="avatar" src="${exportData.profile_photo.data_url}" alt="Foto de perfil">` : '';
         const focusSection = Array.isArray(focus.tasks) && focus.tasks.length
-            ? `<section class="focus-session"><h2>Modo Foco atual</h2><p>${escapeHtml(focus.blockTitle || 'Sessão de foco')} · ${focus.tasks.length} tarefa(s)</p></section>` : '';
-        return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Relatório Foque em Checks</title><style>
+            ? `<section class="focus-session"><h2>Modo Foco atual</h2><p>${escapeHtml(focus.blockTitle || 'SessÃ£o de foco')} Â· ${focus.tasks.length} tarefa(s)</p></section>` : '';
+        return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>RelatÃ³rio Foque em Checks</title><style>
             :root { color-scheme: light; } * { box-sizing:border-box; } body { max-width:900px; margin:0 auto; padding:42px 28px; color:#172033; background:#fff; font:14px/1.45 Inter,Segoe UI,Arial,sans-serif; } header { display:flex; gap:16px; align-items:center; padding-bottom:24px; border-bottom:2px solid #e5eaf1; } h1 { margin:0; font-size:28px; } header p { margin:4px 0 0; color:#667085; } .avatar { width:52px; height:52px; object-fit:cover; border-radius:50%; } .actions { margin:24px 0; } button { padding:10px 14px; color:#fff; background:#087ed5; border:0; border-radius:8px; font:600 13px inherit; cursor:pointer; } .task-group, .focus-session { margin-top:24px; break-inside:avoid; } h2 { margin:0 0 10px; padding-bottom:8px; font-size:17px; border-bottom:1px solid #e5eaf1; } h2 small { color:#667085; font-size:12px; font-weight:600; } .tasks, .subtasks { margin:0; padding:0; list-style:none; } .task { padding:10px 0; border-bottom:1px solid #edf0f4; } .task-line, .subtasks li { display:flex; align-items:center; gap:8px; } .check { width:18px; height:18px; display:inline-grid; flex:0 0 18px; place-items:center; color:#fff; background:#087ed5; border-radius:50%; font-size:12px; font-weight:700; } .task:not(.done) > .task-line > .check, .subtasks li:not(.done) .check { background:#fff; border:1px solid #98a2b3; } .done .task-text, .subtasks .done { color:#667085; text-decoration:line-through; } .important { color:#d49b18; font-size:16px; } .days { margin-left:auto; color:#475467; font-size:12px; } .subtasks { margin:8px 0 0 27px; } .subtasks li { padding:3px 0; font-size:13px; } .subtasks .check { width:15px; height:15px; flex-basis:15px; font-size:10px; } .empty { color:#667085; font-style:italic; } .focus-session { padding:14px; background:#f5f9fd; border-radius:10px; } .focus-session p { margin:0; color:#475467; } @media print { body { padding:0; } .actions { display:none; } }
-        </style></head><body><header>${photo}<div><h1>Foque em Checks — Relatório de tarefas</h1><p>${escapeHtml(exportData.account.email || 'Conta Foque em Checks')} · Exportado em ${new Date(exportData.exported_at).toLocaleString('pt-BR')}</p></div></header><div class="actions"><button type="button" onclick="window.print()">Imprimir / Salvar como PDF</button></div>${taskGroupReportHtml('Inbox', organizer.inbox)}${blocks.map(block => taskGroupReportHtml(block.title || 'Bloco sem título', block.tasks)).join('')}${focusSection}</body></html>`;
+        </style></head><body><header>${photo}<div><h1>Foque em Checks â€” RelatÃ³rio de tarefas</h1><p>${escapeHtml(exportData.account.email || 'Conta Foque em Checks')} Â· Exportado em ${new Date(exportData.exported_at).toLocaleString('pt-BR')}</p></div></header><div class="actions"><button type="button" onclick="window.print()">Imprimir / Salvar como PDF</button></div>${taskGroupReportHtml('Inbox', organizer.inbox)}${blocks.map(block => taskGroupReportHtml(block.title || 'Bloco sem tÃ­tulo', block.tasks)).join('')}${focusSection}</body></html>`;
     }
 
     function installAccountButton(user) {
@@ -426,7 +409,7 @@
         const panel = document.createElement('div');
         panel.className = 'focus-account-panel';
         panel.hidden = true;
-        panel.innerHTML = '<div class="focus-account-summary"><div class="focus-account-avatar"></div><div class="focus-account-email"></div></div><div class="focus-account-actions"><button type="button" class="focus-avatar-action">Foto de perfil</button><button type="button" class="focus-avatar-remove">Remover foto</button><button type="button" class="focus-password-action">Trocar senha</button><button type="button" class="focus-export-action">Baixar dados</button><button type="button" class="focus-report-action">Relatório visual</button><button type="button" class="focus-delete-action danger">Excluir conta</button></div>';
+        panel.innerHTML = '<div class="focus-account-summary"><div class="focus-account-avatar"></div><div class="focus-account-email"></div></div><div class="focus-account-actions"><button type="button" class="focus-avatar-action">Foto de perfil</button><button type="button" class="focus-avatar-remove">Remover foto</button><button type="button" class="focus-password-action">Trocar senha</button><button type="button" class="focus-export-action">Baixar dados</button><button type="button" class="focus-report-action">RelatÃ³rio visual</button><button type="button" class="focus-delete-action danger">Excluir conta</button></div>';
         const fileInput = document.createElement('input');
         fileInput.type = 'file'; fileInput.accept = 'image/png,image/jpeg,image/webp'; fileInput.hidden = true;
         const avatarAction = panel.querySelector('.focus-avatar-action');
@@ -443,7 +426,7 @@
             if (panel.querySelector('.focus-password-form')) return;
             const form = document.createElement('form');
             form.className = 'focus-password-form';
-            form.innerHTML = '<input required type="password" name="current" autocomplete="current-password" placeholder="Senha atual"><input required minlength="8" type="password" name="next" autocomplete="new-password" placeholder="Nova senha (mín. 8)"><input required minlength="8" type="password" name="confirm" autocomplete="new-password" placeholder="Confirmar nova senha"><button type="button" class="focus-toggle-passwords" aria-pressed="false">Mostrar senhas</button><button type="submit">Salvar senha</button><p aria-live="polite"></p>';
+            form.innerHTML = '<input required type="password" name="current" autocomplete="current-password" placeholder="Senha atual"><input required minlength="8" type="password" name="next" autocomplete="new-password" placeholder="Nova senha (mÃ­n. 8)"><input required minlength="8" type="password" name="confirm" autocomplete="new-password" placeholder="Confirmar nova senha"><button type="button" class="focus-toggle-passwords" aria-pressed="false">Mostrar senhas</button><button type="submit">Salvar senha</button><p aria-live="polite"></p>';
             form.querySelector('.focus-toggle-passwords').addEventListener('click', (toggle) => {
                 const visible = toggle.currentTarget.getAttribute('aria-pressed') !== 'true';
                 form.querySelectorAll('input').forEach(input => { input.type = visible ? 'text' : 'password'; });
@@ -462,12 +445,12 @@
                 };
 
                 if (next !== data.get('confirm')) {
-                    setStatus('As senhas não coincidem.', 'error');
+                    setStatus('As senhas nÃ£o coincidem.', 'error');
                     return;
                 }
 
                 submit.disabled = true;
-                submit.textContent = 'Confirmando…';
+                submit.textContent = 'Confirmandoâ€¦';
                 try {
                     const { error } = await client.auth.updateUser({
                         password: next,
@@ -477,8 +460,8 @@
                         console.error('Falha ao atualizar a senha:', error);
                         setStatus(
                             /password|credential|invalid/i.test(error.message || '')
-                                ? 'A senha atual não foi validada. A senha não foi alterada.'
-                                : 'Não foi possível alterar a senha. Tente novamente.',
+                                ? 'A senha atual nÃ£o foi validada. A senha nÃ£o foi alterada.'
+                                : 'NÃ£o foi possÃ­vel alterar a senha. Tente novamente.',
                             'error'
                         );
                         return;
@@ -487,7 +470,7 @@
                     form.reset();
                 } catch (error) {
                     console.error('Erro ao alterar senha:', error);
-                    setStatus('Não foi possível concluir a alteração agora. Tente novamente.', 'error');
+                    setStatus('NÃ£o foi possÃ­vel concluir a alteraÃ§Ã£o agora. Tente novamente.', 'error');
                 } finally {
                     submit.disabled = false;
                     submit.textContent = 'Salvar senha';
@@ -497,13 +480,13 @@
         });
         exportAction.addEventListener('click', async () => {
             exportAction.disabled = true;
-            exportAction.textContent = 'Preparando dados…';
+            exportAction.textContent = 'Preparando dadosâ€¦';
             try {
                 downloadJson(await buildExport(user));
                 showCloudStatus('Download dos seus dados iniciado', 'success');
             } catch (error) {
                 console.error('Erro ao exportar dados:', error);
-                showCloudStatus('Não foi possível preparar o download', 'error');
+                showCloudStatus('NÃ£o foi possÃ­vel preparar o download', 'error');
             } finally {
                 exportAction.disabled = false;
                 exportAction.textContent = 'Baixar dados';
@@ -512,11 +495,11 @@
         reportAction.addEventListener('click', async () => {
             const reportWindow = window.open('', '_blank');
             if (!reportWindow) {
-                showCloudStatus('Permita pop-ups para abrir o relatório', 'warning');
+                showCloudStatus('Permita pop-ups para abrir o relatÃ³rio', 'warning');
                 return;
             }
             reportWindow.opener = null;
-            reportWindow.document.write('<title>Preparando relatório…</title><p style="font:14px system-ui;padding:24px">Preparando relatório…</p>');
+            reportWindow.document.write('<title>Preparando relatÃ³rioâ€¦</title><p style="font:14px system-ui;padding:24px">Preparando relatÃ³rioâ€¦</p>');
             reportWindow.document.close();
             reportAction.disabled = true;
             try {
@@ -524,9 +507,9 @@
                 reportWindow.document.write(buildReportHtml(await buildExport(user)));
                 reportWindow.document.close();
             } catch (error) {
-                console.error('Erro ao preparar relatório:', error);
+                console.error('Erro ao preparar relatÃ³rio:', error);
                 reportWindow.close();
-                showCloudStatus('Não foi possível preparar o relatório', 'error');
+                showCloudStatus('NÃ£o foi possÃ­vel preparar o relatÃ³rio', 'error');
             } finally {
                 reportAction.disabled = false;
             }
@@ -535,28 +518,28 @@
             if (panel.querySelector('.focus-delete-form')) return;
             const form = document.createElement('form');
             form.className = 'focus-delete-form';
-            form.innerHTML = '<p><strong>Esta ação é irreversível.</strong> A foto, tarefas, blocos e sua conta serão excluídos.</p><label>Digite <strong>EXCLUIR MINHA CONTA</strong> para confirmar.</label><input required name="confirmation" autocomplete="off"><button type="submit">Excluir conta definitivamente</button><p aria-live="polite"></p>';
+            form.innerHTML = '<p><strong>Esta aÃ§Ã£o Ã© irreversÃ­vel.</strong> A foto, tarefas, blocos e sua conta serÃ£o excluÃ­dos.</p><label>Digite <strong>EXCLUIR MINHA CONTA</strong> para confirmar.</label><input required name="confirmation" autocomplete="off"><button type="submit">Excluir conta definitivamente</button><p aria-live="polite"></p>';
             form.addEventListener('submit', async (event) => {
                 event.preventDefault();
                 const status = form.querySelector('p[aria-live]');
                 const submit = form.querySelector('button[type="submit"]');
                 if (new FormData(form).get('confirmation').trim() !== 'EXCLUIR MINHA CONTA') {
-                    status.textContent = 'Digite a frase de confirmação exatamente como mostrada.';
+                    status.textContent = 'Digite a frase de confirmaÃ§Ã£o exatamente como mostrada.';
                     return;
                 }
                 submit.disabled = true;
-                submit.textContent = 'Excluindo…';
+                submit.textContent = 'Excluindoâ€¦';
                 try {
                     const { error } = await client.rpc('delete_own_account');
                     if (error) throw error;
                     removeLocalState('focusOrganizerState');
                     removeLocalState('focusAppState');
                     localStorage.removeItem('focusOrganizerTheme');
-                    try { await client.auth.signOut({ scope: 'local' }); } catch (signOutError) { console.warn('Sessão já foi invalidada:', signOutError); }
+                    try { await client.auth.signOut({ scope: 'local' }); } catch (signOutError) { console.warn('SessÃ£o jÃ¡ foi invalidada:', signOutError); }
                     location.replace('login.html?deleted=1');
                 } catch (error) {
                     console.error('Erro ao excluir conta:', error);
-                    status.textContent = 'Não foi possível excluir a conta. Confirme a configuração do Supabase e tente novamente.';
+                    status.textContent = 'NÃ£o foi possÃ­vel excluir a conta. Confirme a configuraÃ§Ã£o do Supabase e tente novamente.';
                     submit.disabled = false;
                     submit.textContent = 'Excluir conta definitivamente';
                 }
@@ -566,7 +549,7 @@
         avatarAction.addEventListener('click', () => fileInput.click());
         fileInput.addEventListener('change', async () => {
             const file = fileInput.files?.[0]; if (!file) return;
-            if (file.size > 2 * 1024 * 1024) { showCloudStatus('A foto deve ter no máximo 2 MB', 'warning'); return; }
+            if (file.size > 2 * 1024 * 1024) { showCloudStatus('A foto deve ter no mÃ¡ximo 2 MB', 'warning'); return; }
             const allowedImageTypes = new Map([
                 ['image/jpeg', 'jpg'],
                 ['image/png', 'png'],
@@ -590,7 +573,7 @@
                 user.user_metadata.avatar_path = path;
                 await applyAvatar(path);
                 removeAvatar.disabled = false;
-            } catch (error) { console.error('Erro ao enviar avatar:', error); showCloudStatus('Não foi possível enviar a foto', 'error'); }
+            } catch (error) { console.error('Erro ao enviar avatar:', error); showCloudStatus('NÃ£o foi possÃ­vel enviar a foto', 'error'); }
             finally { avatarAction.disabled = false; fileInput.value = ''; }
         });
         removeAvatar.addEventListener('click', async () => {
@@ -608,7 +591,7 @@
                     element.textContent = initials;
                 });
                 user.user_metadata.avatar_path = null;
-            } catch (error) { console.error('Erro ao remover avatar:', error); showCloudStatus('Não foi possível remover a foto', 'error'); }
+            } catch (error) { console.error('Erro ao remover avatar:', error); showCloudStatus('NÃ£o foi possÃ­vel remover a foto', 'error'); }
         });
         const button = document.createElement('button');
         button.type = 'button';
@@ -623,7 +606,7 @@
             } catch (error) {
                 console.error('Erro ao sair:', error);
                 button.disabled = false;
-                showCloudStatus('Não foi possível sair', 'error');
+                showCloudStatus('NÃ£o foi possÃ­vel sair', 'error');
             }
         });
 
@@ -664,3 +647,8 @@
         showStatus: showCloudStatus
     };
 })();
+
+
+
+
+
