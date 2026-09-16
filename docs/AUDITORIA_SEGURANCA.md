@@ -1,10 +1,10 @@
-# Auditoria de segurança do Focus
+# Auditoria de segurança do Foque em Checks
 
 Data da revisão: 16 de setembro de 2026.
 
 ## Conclusão
 
-O Focus está adequado para uma aplicação pessoal estática, mas não deve ser descrito
+O Foque em Checks está adequado para uma aplicação pessoal estática, mas não deve ser descrito
 como "100% seguro". A autenticação e a autorização dependem da configuração correta
 do Supabase. O risco mais grave encontrado era de integridade dos dados: estados
 inteiros eram gravados com estratégia de "última gravação vence", as chaves locais

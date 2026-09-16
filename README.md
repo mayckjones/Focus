@@ -1,4 +1,4 @@
-# Focus
+# Foque em Checks
 
 Aplicação estática de organização de tarefas, modo foco e sincronização por usuário
 com Supabase.
@@ -33,7 +33,7 @@ somente a chave pública (`sb_publishable_...`). Nunca publique uma chave
 
 ## Proteção dos dados
 
-O Focus mantém uma cópia por usuário no navegador, cinco versões locais anteriores
+O Foque em Checks mantém uma cópia por usuário no navegador, cinco versões locais anteriores
 e, depois da aplicação do SQL atual, 30 versões anteriores no Supabase. A
 sincronização usa atualização condicional para impedir que uma aba antiga substitua
 silenciosamente uma versão mais nova.

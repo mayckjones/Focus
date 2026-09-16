@@ -56,5 +56,5 @@ where current_state.user_id = history.user_id
   and account.email = 'SEU_EMAIL_AQUI';
 ```
 
-Confirme que o resultado indica uma linha alterada. Recarregue o Focus somente
+Confirme que o resultado indica uma linha alterada. Recarregue o Foque em Checks somente
 depois dessa confirmação.

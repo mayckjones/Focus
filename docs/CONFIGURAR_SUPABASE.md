@@ -1,4 +1,4 @@
-# Configurar o Supabase no Focus
+# Configurar o Supabase no Foque em Checks
 
 Você precisa fazer apenas os passos abaixo uma vez.
 
@@ -50,7 +50,7 @@ atual no próprio servidor.
 4. Adicione ou altere uma tarefa.
 5. No Supabase, abra **Table Editor > focus_user_states**. Uma linha deve aparecer para o usuário.
 
-O Focus continuará mantendo uma cópia no navegador e também salvará tarefas, blocos, subtarefas e a sessão do modo foco no Supabase.
+O Foque em Checks continuará mantendo uma cópia no navegador e também salvará tarefas, blocos, subtarefas e a sessão do modo foco no Supabase.
 
 ## 5. Habilitar a exclusão de conta
 
@@ -59,9 +59,9 @@ A opção **Excluir conta** só funciona depois de executar a versão atual do a
 1. Abra **SQL Editor** no projeto Supabase.
 2. Copie e execute o conteúdo atual de `database/supabase.sql`.
 3. Confirme que o resultado foi **Success. No rows returned**.
-4. No Focus, abra o perfil, escolha **Excluir conta** e digite a frase solicitada.
+4. No Foque em Checks, abra o perfil, escolha **Excluir conta** e digite a frase solicitada.
 
-Essa ação é irreversível: remove o avatar, os estados do Focus e o usuário autenticado. Use **Baixar dados** antes, caso queira guardar uma cópia.
+Essa ação é irreversível: remove o avatar, os estados do Foque em Checks e o usuário autenticado. Use **Baixar dados** antes, caso queira guardar uma cópia.
 
 ## 6. Ativar o histórico de segurança
 
@@ -71,7 +71,7 @@ anterior e mantém as 30 versões mais recentes de cada usuário.
 
 Para habilitar esse recurso em um projeto que já está funcionando:
 
-1. Use **Baixar dados** no perfil do Focus e guarde o JSON.
+1. Use **Baixar dados** no perfil do Foque em Checks e guarde o JSON.
 2. Abra **SQL Editor** no Supabase.
 3. Copie todo o conteúdo de `database/supabase.sql` e execute.
 4. Confirme **Success. No rows returned**.

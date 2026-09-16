@@ -359,7 +359,7 @@
         const anchor = document.createElement('a');
         const date = new Date().toISOString().slice(0, 10);
         anchor.href = url;
-        anchor.download = `focus-dados-${date}.json`;
+        anchor.download = `foque-em-checks-dados-${date}.json`;
         anchor.hidden = true;
         document.body.appendChild(anchor);
         anchor.click();
@@ -391,9 +391,9 @@
         const photo = exportData.profile_photo?.data_url ? `<img class="avatar" src="${exportData.profile_photo.data_url}" alt="Foto de perfil">` : '';
         const focusSection = Array.isArray(focus.tasks) && focus.tasks.length
             ? `<section class="focus-session"><h2>Modo Foco atual</h2><p>${escapeHtml(focus.blockTitle || 'Sessão de foco')} · ${focus.tasks.length} tarefa(s)</p></section>` : '';
-        return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Relatório Focus</title><style>
+        return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Relatório Foque em Checks</title><style>
             :root { color-scheme: light; } * { box-sizing:border-box; } body { max-width:900px; margin:0 auto; padding:42px 28px; color:#172033; background:#fff; font:14px/1.45 Inter,Segoe UI,Arial,sans-serif; } header { display:flex; gap:16px; align-items:center; padding-bottom:24px; border-bottom:2px solid #e5eaf1; } h1 { margin:0; font-size:28px; } header p { margin:4px 0 0; color:#667085; } .avatar { width:52px; height:52px; object-fit:cover; border-radius:50%; } .actions { margin:24px 0; } button { padding:10px 14px; color:#fff; background:#087ed5; border:0; border-radius:8px; font:600 13px inherit; cursor:pointer; } .task-group, .focus-session { margin-top:24px; break-inside:avoid; } h2 { margin:0 0 10px; padding-bottom:8px; font-size:17px; border-bottom:1px solid #e5eaf1; } h2 small { color:#667085; font-size:12px; font-weight:600; } .tasks, .subtasks { margin:0; padding:0; list-style:none; } .task { padding:10px 0; border-bottom:1px solid #edf0f4; } .task-line, .subtasks li { display:flex; align-items:center; gap:8px; } .check { width:18px; height:18px; display:inline-grid; flex:0 0 18px; place-items:center; color:#fff; background:#087ed5; border-radius:50%; font-size:12px; font-weight:700; } .task:not(.done) > .task-line > .check, .subtasks li:not(.done) .check { background:#fff; border:1px solid #98a2b3; } .done .task-text, .subtasks .done { color:#667085; text-decoration:line-through; } .important { color:#d49b18; font-size:16px; } .days { margin-left:auto; color:#475467; font-size:12px; } .subtasks { margin:8px 0 0 27px; } .subtasks li { padding:3px 0; font-size:13px; } .subtasks .check { width:15px; height:15px; flex-basis:15px; font-size:10px; } .empty { color:#667085; font-style:italic; } .focus-session { padding:14px; background:#f5f9fd; border-radius:10px; } .focus-session p { margin:0; color:#475467; } @media print { body { padding:0; } .actions { display:none; } }
-        </style></head><body><header>${photo}<div><h1>Focus — Relatório de tarefas</h1><p>${escapeHtml(exportData.account.email || 'Conta Focus')} · Exportado em ${new Date(exportData.exported_at).toLocaleString('pt-BR')}</p></div></header><div class="actions"><button type="button" onclick="window.print()">Imprimir / Salvar como PDF</button></div>${taskGroupReportHtml('Inbox', organizer.inbox)}${blocks.map(block => taskGroupReportHtml(block.title || 'Bloco sem título', block.tasks)).join('')}${focusSection}</body></html>`;
+        </style></head><body><header>${photo}<div><h1>Foque em Checks — Relatório de tarefas</h1><p>${escapeHtml(exportData.account.email || 'Conta Foque em Checks')} · Exportado em ${new Date(exportData.exported_at).toLocaleString('pt-BR')}</p></div></header><div class="actions"><button type="button" onclick="window.print()">Imprimir / Salvar como PDF</button></div>${taskGroupReportHtml('Inbox', organizer.inbox)}${blocks.map(block => taskGroupReportHtml(block.title || 'Bloco sem título', block.tasks)).join('')}${focusSection}</body></html>`;
     }
 
     function installAccountButton(user) {
@@ -403,7 +403,7 @@
         menu.id = 'focus-account-menu';
         menu.className = 'focus-account-menu';
 
-        const email = user.email || 'Conta Focus';
+        const email = user.email || 'Conta Foque em Checks';
         const initials = email.slice(0, 2).toUpperCase();
         const applyAvatar = async (path) => {
             if (!path) return;
