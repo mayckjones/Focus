@@ -397,6 +397,26 @@
             text-align: left;
         }
 
+        .filter-bar.organizing-filters .filter-orderable,
+        .weekday-filter-menu.organizing-filters .filter-orderable {
+            cursor: grab;
+        }
+
+        .filter-orderable.filter-dragging {
+            opacity: 0.45;
+        }
+
+        .organize-filters-btn {
+            min-width: 0;
+            padding: 5px 8px;
+            justify-content: center;
+        }
+
+        .organize-filters-btn svg {
+            width: 13px;
+            height: 13px;
+        }
+
         .search-container {
             display: flex;
             align-items: center;
@@ -2111,24 +2131,25 @@
     <!-- FILTER BAR -->
     <div class="filter-bar" id="filter-bar">
         <span class="filter-label">Filtrar:</span>
-        <button class="filter-chip active" data-filter="all">Todos</button>
-        <button class="filter-chip" data-filter="important" title="Tarefas importantes"><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.1 8.3 22 9.3 17 14.2 18.2 21.1 12 17.8 5.8 21.1 7 14.2 2 9.3 8.9 8.3 12 2"></polygon></svg>Importantes</button>
-        <button class="filter-chip" data-filter="atrasadas"><span class="chip-dot" style="background:var(--block-urgent)"></span>Atrasadas</button>
-        <button class="filter-chip" data-filter="hoje"><span class="chip-dot" style="background:var(--day-hoje)"></span>Hoje</button>
-        <button class="filter-chip" data-filter="amanha"><span class="chip-dot" style="background:var(--day-ter)"></span>Amanhã</button>
-        <div class="weekday-filter" id="weekday-filter">
+        <button class="filter-chip organize-filters-btn" id="btn-organize-filters" type="button" title="Organizar filtros" aria-label="Organizar filtros"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg></button>
+        <button class="filter-chip filter-orderable active" data-filter="all" data-order-id="all">Todos</button>
+        <button class="filter-chip filter-orderable" data-filter="important" data-order-id="important" title="Tarefas importantes"><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.1 8.3 22 9.3 17 14.2 18.2 21.1 12 17.8 5.8 21.1 7 14.2 2 9.3 8.9 8.3 12 2"></polygon></svg>Importantes</button>
+        <button class="filter-chip filter-orderable" data-filter="atrasadas" data-order-id="atrasadas"><span class="chip-dot" style="background:var(--block-urgent)"></span>Atrasadas</button>
+        <button class="filter-chip filter-orderable" data-filter="hoje" data-order-id="hoje"><span class="chip-dot" style="background:var(--day-hoje)"></span>Hoje</button>
+        <button class="filter-chip filter-orderable" data-filter="amanha" data-order-id="amanha"><span class="chip-dot" style="background:var(--day-ter)"></span>Amanhã</button>
+        <div class="weekday-filter filter-orderable" id="weekday-filter" data-order-id="weekdays">
             <button class="filter-chip weekday-filter-toggle" id="weekday-filter-toggle" type="button" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"></rect><line x1="8" y1="2" x2="8" y2="6"></line><line x1="16" y1="2" x2="16" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg><span id="weekday-filter-label">Dias da semana</span></button>
             <div class="weekday-filter-menu" id="weekday-filter-menu" role="menu" aria-label="Filtrar por dia da semana">
-                <button class="filter-chip" data-filter="segunda" role="menuitem"><span class="chip-dot" style="background:var(--day-seg)"></span>Segunda</button>
-                <button class="filter-chip" data-filter="terca" role="menuitem"><span class="chip-dot" style="background:var(--day-ter)"></span>Terça</button>
-                <button class="filter-chip" data-filter="quarta" role="menuitem"><span class="chip-dot" style="background:var(--day-qua)"></span>Quarta</button>
-                <button class="filter-chip" data-filter="quinta" role="menuitem"><span class="chip-dot" style="background:var(--day-qui)"></span>Quinta</button>
-                <button class="filter-chip" data-filter="sexta" role="menuitem"><span class="chip-dot" style="background:var(--day-sex)"></span>Sexta</button>
-                <button class="filter-chip" data-filter="sabado" role="menuitem"><span class="chip-dot" style="background:var(--day-sab)"></span>Sábado</button>
-                <button class="filter-chip" data-filter="domingo" role="menuitem"><span class="chip-dot" style="background:var(--day-dom)"></span>Domingo</button>
+                <button class="filter-chip filter-orderable" data-filter="segunda" data-order-id="segunda" role="menuitem"><span class="chip-dot" style="background:var(--day-seg)"></span>Segunda</button>
+                <button class="filter-chip filter-orderable" data-filter="terca" data-order-id="terca" role="menuitem"><span class="chip-dot" style="background:var(--day-ter)"></span>Terça</button>
+                <button class="filter-chip filter-orderable" data-filter="quarta" data-order-id="quarta" role="menuitem"><span class="chip-dot" style="background:var(--day-qua)"></span>Quarta</button>
+                <button class="filter-chip filter-orderable" data-filter="quinta" data-order-id="quinta" role="menuitem"><span class="chip-dot" style="background:var(--day-qui)"></span>Quinta</button>
+                <button class="filter-chip filter-orderable" data-filter="sexta" data-order-id="sexta" role="menuitem"><span class="chip-dot" style="background:var(--day-sex)"></span>Sexta</button>
+                <button class="filter-chip filter-orderable" data-filter="sabado" data-order-id="sabado" role="menuitem"><span class="chip-dot" style="background:var(--day-sab)"></span>Sábado</button>
+                <button class="filter-chip filter-orderable" data-filter="domingo" data-order-id="domingo" role="menuitem"><span class="chip-dot" style="background:var(--day-dom)"></span>Domingo</button>
             </div>
         </div>
-        <button class="filter-chip" data-filter="futuras"><span class="chip-dot" style="background:var(--text-tertiary)"></span>Futuras</button>
+        <button class="filter-chip filter-orderable" data-filter="futuras" data-order-id="futuras"><span class="chip-dot" style="background:var(--text-tertiary)"></span>Futuras</button>
 
         <div class="search-container">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
@@ -2326,7 +2347,18 @@
             blocks: [],
             activeFilter: 'all',
             searchQuery: '',
+            filterOrder: [],
+            weekdayOrder: [],
         };
+
+        const DEFAULT_FILTER_ORDER = ['all', 'important', 'atrasadas', 'hoje', 'amanha', 'weekdays', 'futuras'];
+        const DEFAULT_WEEKDAY_ORDER = ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'];
+
+        function normalizeFilterOrders(source) {
+            const normalize = (value, defaults) => [...new Set([...(Array.isArray(value) ? value : []), ...defaults].filter(id => defaults.includes(id)))];
+            state.filterOrder = normalize(source?.filterOrder, DEFAULT_FILTER_ORDER);
+            state.weekdayOrder = normalize(source?.weekdayOrder, DEFAULT_WEEKDAY_ORDER);
+        }
 
         let dragData = null; // { taskId, sourceType: 'inbox'|'block', sourceBlockId? }
         let pendingDrop = null;
@@ -2530,10 +2562,25 @@
                 try {
                     const cloudState = await window.FocusCloud.loadOrganizerState();
                     if (cloudState && Array.isArray(cloudState.blocks)) {
+                        const localHasContent = Boolean(localState && (
+                            (localState.inbox || []).length > 0 ||
+                            (localState.blocks || []).some(block => (block.tasks || []).length > 0)
+                        ));
+                        const cloudHasContent = (cloudState.inbox || []).length > 0 ||
+                            (cloudState.blocks || []).some(block => (block.tasks || []).length > 0);
+                        if (!cloudHasContent && localHasContent) {
+                            state.inbox = localState.inbox || [];
+                            state.blocks = localState.blocks || [];
+                            state.activeFilter = localState.activeFilter || 'all';
+                            state.searchQuery = localState.searchQuery || '';
+                            window.FocusCloud?.showStatus('A cópia local foi preservada; a nuvem estava vazia', 'warning');
+                            return true;
+                        }
                         state.inbox = cloudState.inbox || [];
                         state.blocks = cloudState.blocks || [];
                         state.activeFilter = cloudState.activeFilter || 'all';
                         state.searchQuery = cloudState.searchQuery || '';
+                        normalizeFilterOrders(cloudState);
                         const normalized = normalizeOrganizerTaskImportance();
                         localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
                         if (normalized) window.FocusCloud?.scheduleOrganizerSave(state);
@@ -2550,6 +2597,7 @@
                 state.blocks = localState.blocks || [];
                 state.activeFilter = localState.activeFilter || 'all';
                 state.searchQuery = localState.searchQuery || '';
+                normalizeFilterOrders(localState);
                 normalizeOrganizerTaskImportance();
                 window.FocusCloud?.scheduleOrganizerSave(state);
                 return true;
@@ -3674,6 +3722,34 @@
             }
         });
 
+        let organizingFilters = false;
+        let filterDragItem = null;
+        function applyFilterOrders() {
+            const bar = document.getElementById('filter-bar'); const search = bar.querySelector('.search-container');
+            state.filterOrder.forEach(id => { const item = bar.querySelector(`[data-order-id="${id}"]`); if (item) bar.insertBefore(item, search); });
+            const menu = document.getElementById('weekday-filter-menu');
+            state.weekdayOrder.forEach(id => { const item = menu.querySelector(`[data-order-id="${id}"]`); if (item) menu.appendChild(item); });
+        }
+        function saveFilterOrder(container, property) { state[property] = [...container.querySelectorAll(':scope > .filter-orderable')].map(item => item.dataset.orderId); saveState(); }
+        function enableFilterOrdering(enabled) {
+            organizingFilters = enabled; const bar = document.getElementById('filter-bar'); const menu = document.getElementById('weekday-filter-menu');
+            bar.classList.toggle('organizing-filters', enabled); menu.classList.toggle('organizing-filters', enabled);
+            document.querySelectorAll('.filter-orderable').forEach(item => item.draggable = enabled);
+            const button = document.getElementById('btn-organize-filters');
+            button.classList.toggle('active', enabled);
+            button.title = enabled ? 'Concluir organização' : 'Organizar filtros';
+            button.setAttribute('aria-label', button.title);
+        }
+        document.getElementById('btn-organize-filters').addEventListener('click', (e) => { e.stopPropagation(); enableFilterOrdering(!organizingFilters); });
+        document.addEventListener('dragstart', (e) => { if (!organizingFilters || !e.target.matches('.filter-orderable')) return; filterDragItem = e.target; e.target.classList.add('filter-dragging'); });
+        document.addEventListener('dragend', () => { filterDragItem?.classList.remove('filter-dragging'); filterDragItem = null; });
+        function bindOrderContainer(container, property) {
+            container.addEventListener('dragover', (e) => { if (!filterDragItem || filterDragItem.parentElement !== container) return; e.preventDefault(); const siblings=[...container.querySelectorAll(':scope > .filter-orderable:not(.filter-dragging)')]; const before=siblings.find(item => (container.id === 'weekday-filter-menu' ? e.clientY < item.getBoundingClientRect().top + item.offsetHeight/2 : e.clientX < item.getBoundingClientRect().left + item.offsetWidth/2)); container.insertBefore(filterDragItem, before || null); });
+            container.addEventListener('drop', (e) => { if (!filterDragItem) return; e.preventDefault(); saveFilterOrder(container, property); });
+        }
+        bindOrderContainer(document.getElementById('filter-bar'), 'filterOrder');
+        bindOrderContainer(document.getElementById('weekday-filter-menu'), 'weekdayOrder');
+
         // ===========================
         // THEME TOGGLE
         // ===========================
@@ -4452,6 +4528,8 @@
                 // Initialize with default blocks
                 state.blocks = DEFAULT_BLOCKS;
             }
+            normalizeFilterOrders(state);
+            applyFilterOrders();
 
             // Update nextColorIndex based on existing blocks
             if (state.blocks.length > 0) {
