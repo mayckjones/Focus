@@ -1078,7 +1078,8 @@
         .task-actions {
             display: flex;
             align-items: center;
-            gap: 2px;
+            gap: 0;
+            margin-right: -8px;
             opacity: 0;
             visibility: hidden;
             pointer-events: none;
@@ -1138,8 +1139,40 @@
         }
 
         .task-action-btn svg {
-            width: 12px;
-            height: 12px;
+            width: 15px;
+            height: 15px;
+        }
+
+        .task-important-btn {
+            width: 24px;
+            height: 24px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            border: none;
+            border-radius: var(--radius-xs);
+            background: transparent;
+            color: var(--text-tertiary);
+            transition: color var(--motion-fast) ease, background-color var(--motion-fast) ease;
+        }
+
+        .task-important-btn:hover {
+            background: var(--bg-secondary);
+            color: var(--block-important);
+        }
+
+        .task-important-btn[aria-pressed="true"] {
+            color: var(--block-important);
+        }
+
+        .task-important-btn[aria-pressed="true"] svg {
+            fill: currentColor;
+        }
+
+        .task-important-btn svg {
+            width: 15px;
+            height: 15px;
         }
 
         /* ========== DAY PICKER DROPDOWN ========== */
@@ -2041,6 +2074,7 @@
     <div class="filter-bar" id="filter-bar">
         <span class="filter-label">Filtrar:</span>
         <button class="filter-chip active" data-filter="all">Todos</button>
+        <button class="filter-chip" data-filter="important" title="Tarefas importantes"><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.1 8.3 22 9.3 17 14.2 18.2 21.1 12 17.8 5.8 21.1 7 14.2 2 9.3 8.9 8.3 12 2"></polygon></svg>Importantes</button>
         <button class="filter-chip" data-filter="atrasadas"><span class="chip-dot" style="background:var(--block-urgent)"></span>Atrasadas</button>
         <button class="filter-chip" data-filter="hoje"><span class="chip-dot" style="background:var(--day-hoje)"></span>Hoje</button>
         <button class="filter-chip" data-filter="amanha"><span class="chip-dot" style="background:var(--day-ter)"></span>Amanhã</button>
@@ -2348,9 +2382,23 @@
                 id: genId(),
                 text: text.trim(),
                 completed: false,
+                important: false,
                 days: [],
                 subtasks: [],
             };
+        }
+
+        function normalizeTaskImportance(task) {
+            if (!task || typeof task !== 'object' || typeof task.important === 'boolean') return false;
+            task.important = false;
+            return true;
+        }
+
+        function normalizeOrganizerTaskImportance() {
+            let changed = false;
+            state.inbox.forEach(task => { changed = normalizeTaskImportance(task) || changed; });
+            state.blocks.forEach(block => (block.tasks || []).forEach(task => { changed = normalizeTaskImportance(task) || changed; }));
+            return changed;
         }
 
         function getDragAfterElement(container, y) {
@@ -2443,7 +2491,9 @@
                         state.blocks = cloudState.blocks || [];
                         state.activeFilter = cloudState.activeFilter || 'all';
                         state.searchQuery = cloudState.searchQuery || '';
+                        const normalized = normalizeOrganizerTaskImportance();
                         localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+                        if (normalized) window.FocusCloud?.scheduleOrganizerSave(state);
                         return true;
                     }
                 } catch (e) {
@@ -2457,6 +2507,7 @@
                 state.blocks = localState.blocks || [];
                 state.activeFilter = localState.activeFilter || 'all';
                 state.searchQuery = localState.searchQuery || '';
+                normalizeOrganizerTaskImportance();
                 window.FocusCloud?.scheduleOrganizerSave(state);
                 return true;
             }
@@ -2537,6 +2588,8 @@
                     const todayStr = new Date().toISOString().split('T')[0];
                     const hasFutureDate = task.days.some(d => /^\d{4}-\d{2}-\d{2}$/.test(d) && d > todayStr);
                     if (!hasFutureDate) return false;
+                } else if (state.activeFilter === 'important') {
+                    if (!task.important) return false;
                 } else if (!task.days.includes(state.activeFilter)) {
                     return false;
                 }
@@ -2635,6 +2688,23 @@
             const actions = document.createElement('div');
             actions.className = 'task-actions';
 
+            const importantBtn = document.createElement('button');
+            importantBtn.type = 'button';
+            importantBtn.className = 'task-important-btn';
+            importantBtn.title = 'Marcar como importante';
+            importantBtn.setAttribute('aria-label', 'Marcar como importante');
+            importantBtn.setAttribute('aria-pressed', String(task.important));
+            importantBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.1 8.3 22 9.3 17 14.2 18.2 21.1 12 17.8 5.8 21.1 7 14.2 2 9.3 8.9 8.3 12 2"></polygon></svg>';
+            importantBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                task.important = !task.important;
+                importantBtn.setAttribute('aria-pressed', String(task.important));
+                importantBtn.title = task.important ? 'Remover importância' : 'Marcar como importante';
+                importantBtn.setAttribute('aria-label', importantBtn.title);
+                saveState();
+                refreshTaskVisibility();
+            });
+
             // Details button
             const detailsBtn = document.createElement('button');
             detailsBtn.className = 'task-action-btn';
@@ -2655,16 +2725,6 @@
                 toggleDayPicker(task, card);
             });
 
-            // Edit button
-            const editBtn = document.createElement('button');
-            editBtn.className = 'task-action-btn';
-            editBtn.title = 'Editar';
-            editBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>';
-            editBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                startEditTask(task, textEl, card);
-            });
-
             // Delete button
             const delBtn = document.createElement('button');
             delBtn.className = 'task-action-btn danger';
@@ -2677,12 +2737,12 @@
 
             actions.appendChild(detailsBtn);
             actions.appendChild(dayBtn);
-            actions.appendChild(editBtn);
             actions.appendChild(delBtn);
 
             card.appendChild(checkbox);
             card.appendChild(content);
             card.appendChild(actions);
+            card.appendChild(importantBtn);
 
             // Drag events
             card.addEventListener('dragstart', (e) => {
