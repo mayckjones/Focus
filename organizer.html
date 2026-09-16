@@ -1011,15 +1011,21 @@
             font-weight: 500;
             color: var(--text);
             font-family: var(--font);
-            border: 1px solid var(--primary);
-            border-radius: var(--radius-xs);
-            padding: 2px 6px;
-            background: var(--surface);
+            border: 0;
+            border-radius: 0;
+            padding: 0;
+            background: transparent;
             outline: none;
             resize: none;
             overflow: hidden;
             line-height: 1.4;
-            box-shadow: 0 0 0 2px var(--primary-glow);
+            min-height: 1.4em;
+        }
+
+        /* Mantém a edição integrada ao texto, sem herdar o contorno global de foco. */
+        textarea.task-text-input:focus-visible {
+            outline: none;
+            outline-offset: 0;
         }
 
         .task-chips {
@@ -2585,6 +2591,7 @@
         function startEditTask(task, textEl, card) {
             const input = document.createElement('textarea');
             input.className = 'task-text-input';
+            input.setAttribute('aria-label', 'Editar tarefa');
             input.value = task.text;
             input.rows = 1;
             
@@ -2596,12 +2603,12 @@
 
             textEl.replaceWith(input);
             input.focus();
-            input.setSelectionRange(input.value.length, input.value.length);
+            input.setSelectionRange(0, input.value.length);
             adjustHeight();
 
             const finish = () => {
                 const val = input.value.trim();
-                if (val) {
+                if (val && val !== task.text) {
                     task.text = val;
                     saveState();
                 }
@@ -3976,6 +3983,7 @@
                     e.stopPropagation();
                     const input = document.createElement('textarea');
                     input.className = 'task-text-input';
+                    input.setAttribute('aria-label', 'Editar subtarefa');
                     input.value = subtask.text;
                     input.rows = 1;
                     
@@ -3987,12 +3995,12 @@
 
                     textEl.replaceWith(input);
                     input.focus();
-                    input.setSelectionRange(input.value.length, input.value.length);
+                    input.setSelectionRange(0, input.value.length);
                     adjustHeight();
 
                     const finish = () => {
                         const val = input.value.trim();
-                        if (val) {
+                        if (val && val !== subtask.text) {
                             subtask.text = val;
                             saveState();
                         }
