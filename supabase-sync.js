@@ -139,13 +139,23 @@
         menu.id = 'focus-account-menu';
         menu.className = 'focus-account-menu';
 
-        const email = document.createElement('span');
-        email.textContent = user.email || 'Conta Focus';
-        email.title = user.email || '';
+        const email = user.email || 'Conta Focus';
+        const initials = email.slice(0, 2).toUpperCase();
+        const trigger = document.createElement('button');
+        trigger.type = 'button';
+        trigger.className = 'focus-account-button';
+        trigger.textContent = initials;
+        trigger.title = 'Abrir perfil';
 
+        const panel = document.createElement('div');
+        panel.className = 'focus-account-panel';
+        panel.hidden = true;
+        panel.innerHTML = `<div class="focus-account-summary"><div class="focus-account-avatar">${initials}</div><div class="focus-account-email">${email}</div></div><div class="focus-account-actions"><button type="button" disabled>Foto de perfil</button><button type="button" disabled>Trocar senha</button><button type="button" disabled>Baixar dados</button></div>`;
         const button = document.createElement('button');
         button.type = 'button';
         button.textContent = 'Sair';
+        panel.querySelector('.focus-account-actions').appendChild(button);
+        trigger.addEventListener('click', () => { panel.hidden = !panel.hidden; });
         button.addEventListener('click', async () => {
             button.disabled = true;
             try {
@@ -158,8 +168,9 @@
             }
         });
 
-        menu.append(email, button);
-        document.body.appendChild(menu);
+        menu.append(trigger, panel);
+        const accountArea = document.querySelector('.header-actions, .top-actions');
+        (accountArea || document.body).appendChild(menu);
     }
 
     if (client) {

@@ -1,30 +1,20 @@
 .focus-account-menu {
-    position: fixed;
+    position: relative;
     z-index: 10000;
-    right: 18px;
-    bottom: 18px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    max-width: min(360px, calc(100vw - 36px));
-    padding: 8px 8px 8px 14px;
-    color: var(--text, var(--text-main, #1a1d23));
-    background: var(--surface, #fff);
-    border: 1px solid var(--border, #d1d5db);
-    border-radius: 999px;
-    box-shadow: 0 8px 28px rgba(0, 0, 0, .14);
-    font-family: Inter, "Segoe UI", system-ui, sans-serif;
 }
 
-.focus-account-menu span {
-    overflow: hidden;
-    font-size: 12px;
-    font-weight: 600;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
+.focus-account-button { width:36px; height:36px; padding:0; color:#fff; background:var(--primary,#0078d4); border:0; border-radius:50%; font:700 13px Inter,"Segoe UI",system-ui,sans-serif; cursor:pointer; }
+.focus-account-panel { position:absolute; z-index:10002; right:0; top:48px; width:min(300px,calc(100vw - 36px)); padding:14px; color:var(--text,#1a1d23); background:var(--surface,#fff); border:1px solid var(--border,#d1d5db); border-radius:14px; box-shadow:0 10px 30px rgba(0,0,0,.2); font-family:Inter,"Segoe UI",system-ui,sans-serif; }
+.focus-account-summary { display:flex; align-items:center; gap:10px; padding-bottom:12px; border-bottom:1px solid var(--border,#d1d5db); }
+.focus-account-avatar { width:34px; height:34px; display:grid; place-items:center; color:#fff; background:var(--primary,#0078d4); border-radius:50%; font-size:12px; font-weight:700; }
+.focus-account-email { overflow:hidden; font-size:12px; font-weight:600; text-overflow:ellipsis; white-space:nowrap; }
+.focus-account-actions { display:grid; gap:4px; padding-top:10px; }
+.focus-account-actions button { width:100%; padding:8px 9px; color:var(--text,#1a1d23); background:transparent; border:0; border-radius:8px; text-align:left; font:600 12px Inter,"Segoe UI",system-ui,sans-serif; cursor:pointer; }
+.focus-account-actions button:hover { background:var(--bg-secondary,#f1f3f5); }
+.focus-account-actions .danger { color:#b42318; }
+.focus-account-actions button:disabled { cursor:not-allowed; opacity:.5; }
 
-.focus-account-menu button {
+.focus-account-menu > button:disabled {
     padding: 7px 12px;
     color: #fff;
     background: var(--primary, #0078d4);
@@ -64,4 +54,3 @@
     .focus-account-menu span { display: none; }
     .focus-cloud-status { bottom: 72px; }
 }
-
