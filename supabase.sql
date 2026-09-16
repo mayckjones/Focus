@@ -28,6 +28,20 @@ for select
 to authenticated
 using ((select auth.uid()) = user_id);
 
+-- Bucket privado de avatares. Cada usuário acessa somente user_id/avatar.*
+insert into storage.buckets (id, name, public)
+values ('focus-avatars', 'focus-avatars', false)
+on conflict (id) do update set public = false;
+
+create policy "focus avatar read own" on storage.objects for select to authenticated
+using (bucket_id = 'focus-avatars' and (storage.foldername(name))[1] = (select auth.uid()::text));
+create policy "focus avatar upload own" on storage.objects for insert to authenticated
+with check (bucket_id = 'focus-avatars' and (storage.foldername(name))[1] = (select auth.uid()::text));
+create policy "focus avatar update own" on storage.objects for update to authenticated
+using (bucket_id = 'focus-avatars' and (storage.foldername(name))[1] = (select auth.uid()::text));
+create policy "focus avatar delete own" on storage.objects for delete to authenticated
+using (bucket_id = 'focus-avatars' and (storage.foldername(name))[1] = (select auth.uid()::text));
+
 create policy "Usuário cria o próprio estado"
 on public.focus_user_states
 for insert

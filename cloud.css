@@ -1,9 +1,12 @@
 .focus-account-menu {
     position: relative;
     z-index: 10000;
+    display: flex;
+    align-items: center;
+    line-height: 0;
 }
 
-.focus-account-button { width:36px; height:36px; padding:0; color:#fff; background:var(--primary,#0078d4); border:0; border-radius:50%; font:700 13px Inter,"Segoe UI",system-ui,sans-serif; cursor:pointer; }
+.focus-account-button { width:36px; height:36px; display:block; padding:0; color:#fff; background:var(--primary,#0078d4); border:0; border-radius:50%; font:700 13px Inter,"Segoe UI",system-ui,sans-serif; cursor:pointer; }
 .focus-account-panel { position:absolute; z-index:10002; right:0; top:48px; width:min(300px,calc(100vw - 36px)); padding:14px; color:var(--text,#1a1d23); background:var(--surface,#fff); border:1px solid var(--border,#d1d5db); border-radius:14px; box-shadow:0 10px 30px rgba(0,0,0,.2); font-family:Inter,"Segoe UI",system-ui,sans-serif; }
 .focus-account-summary { display:flex; align-items:center; gap:10px; padding-bottom:12px; border-bottom:1px solid var(--border,#d1d5db); }
 .focus-account-avatar { width:34px; height:34px; display:grid; place-items:center; color:#fff; background:var(--primary,#0078d4); border-radius:50%; font-size:12px; font-weight:700; }
@@ -14,21 +17,8 @@
 .focus-account-actions .danger { color:#b42318; }
 .focus-account-actions button:disabled { cursor:not-allowed; opacity:.5; }
 
-.focus-account-menu > button:disabled {
-    padding: 7px 12px;
-    color: #fff;
-    background: var(--primary, #0078d4);
-    border: 0;
-    border-radius: 999px;
-    cursor: pointer;
-    font: inherit;
-    font-size: 12px;
-    font-weight: 700;
-}
-
-.focus-account-menu button:disabled {
-    cursor: wait;
-    opacity: .6;
+.focus-account-actions button:disabled {
+    cursor: default;
 }
 
 .focus-cloud-status {

@@ -141,6 +141,11 @@
 
         const email = user.email || 'Conta Focus';
         const initials = email.slice(0, 2).toUpperCase();
+        const applyAvatar = async (path) => {
+            if (!path) return;
+            const { data } = await client.storage.from('focus-avatars').createSignedUrl(path, 3600);
+            if (data?.signedUrl) { trigger.style.backgroundImage = `url("${data.signedUrl}")`; trigger.style.backgroundSize = 'cover'; trigger.textContent = ''; }
+        };
         const trigger = document.createElement('button');
         trigger.type = 'button';
         trigger.className = 'focus-account-button';
@@ -150,7 +155,44 @@
         const panel = document.createElement('div');
         panel.className = 'focus-account-panel';
         panel.hidden = true;
-        panel.innerHTML = `<div class="focus-account-summary"><div class="focus-account-avatar">${initials}</div><div class="focus-account-email">${email}</div></div><div class="focus-account-actions"><button type="button" disabled>Foto de perfil</button><button type="button" disabled>Trocar senha</button><button type="button" disabled>Baixar dados</button></div>`;
+        panel.innerHTML = `<div class="focus-account-summary"><div class="focus-account-avatar">${initials}</div><div class="focus-account-email">${email}</div></div><div class="focus-account-actions"><button type="button" class="focus-avatar-action">Foto de perfil</button><button type="button" class="focus-avatar-remove" ${user.user_metadata?.avatar_path ? '' : 'disabled'}>Remover foto</button><button type="button" disabled>Trocar senha</button><button type="button" disabled>Baixar dados</button></div>`;
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file'; fileInput.accept = 'image/png,image/jpeg,image/webp'; fileInput.hidden = true;
+        const avatarAction = panel.querySelector('.focus-avatar-action');
+        const removeAvatar = panel.querySelector('.focus-avatar-remove');
+        avatarAction.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', async () => {
+            const file = fileInput.files?.[0]; if (!file) return;
+            if (file.size > 2 * 1024 * 1024) { showCloudStatus('A foto deve ter no máximo 2 MB', 'warning'); return; }
+            avatarAction.disabled = true;
+            try {
+                const path = `${user.id}/avatar.${file.name.split('.').pop().toLowerCase()}`;
+                const { error } = await client.storage.from('focus-avatars').upload(path, file, { upsert: true, contentType: file.type });
+                if (error) throw error;
+                const previousPath = user.user_metadata?.avatar_path;
+                if (previousPath && previousPath !== path) await client.storage.from('focus-avatars').remove([previousPath]);
+                const { error: metadataError } = await client.auth.updateUser({ data: { avatar_path: path } });
+                if (metadataError) throw metadataError;
+                user.user_metadata.avatar_path = path;
+                await applyAvatar(path);
+                removeAvatar.disabled = false;
+            } catch (error) { console.error('Erro ao enviar avatar:', error); showCloudStatus('Não foi possível enviar a foto', 'error'); }
+            finally { avatarAction.disabled = false; fileInput.value = ''; }
+        });
+        removeAvatar.addEventListener('click', async () => {
+            const path = user.user_metadata?.avatar_path;
+            if (!path) return;
+            removeAvatar.disabled = true;
+            try {
+                const { error } = await client.storage.from('focus-avatars').remove([path]);
+                if (error) throw error;
+                const { error: metadataError } = await client.auth.updateUser({ data: { avatar_path: null } });
+                if (metadataError) throw metadataError;
+                trigger.style.backgroundImage = '';
+                trigger.textContent = initials;
+                user.user_metadata.avatar_path = null;
+            } catch (error) { console.error('Erro ao remover avatar:', error); showCloudStatus('Não foi possível remover a foto', 'error'); }
+        });
         const button = document.createElement('button');
         button.type = 'button';
         button.textContent = 'Sair';
@@ -168,9 +210,10 @@
             }
         });
 
-        menu.append(trigger, panel);
+        menu.append(trigger, panel, fileInput);
         const accountArea = document.querySelector('.header-actions, .top-actions');
         (accountArea || document.body).appendChild(menu);
+        applyAvatar(user.user_metadata?.avatar_path);
     }
 
     if (client) {
