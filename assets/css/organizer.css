@@ -2110,6 +2110,9 @@ textarea:focus-visible {
     .header {
         padding: calc(8px + env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) 8px max(12px, env(safe-area-inset-left));
         gap: 8px;
+        background: var(--surface);
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
     }
 
     .header-left,
@@ -2142,6 +2145,7 @@ textarea:focus-visible {
     }
 
     .filter-bar {
+        z-index: 700;
         width: 100%;
         padding: 9px max(12px, env(safe-area-inset-right)) 10px max(12px, env(safe-area-inset-left));
         gap: 7px;
@@ -2151,6 +2155,10 @@ textarea:focus-visible {
         scroll-snap-type: inline proximity;
         scroll-padding-inline: 12px;
         -webkit-overflow-scrolling: touch;
+    }
+
+    .filter-bar:has(.weekday-filter.open) {
+        z-index: 1200;
     }
 
     .filter-bar > * {
@@ -2170,7 +2178,7 @@ textarea:focus-visible {
 
     .weekday-filter-menu {
         position: fixed;
-        z-index: 600;
+        z-index: 1201;
         top: calc(106px + env(safe-area-inset-top));
         left: max(12px, env(safe-area-inset-left));
         right: max(12px, env(safe-area-inset-right));
@@ -2179,6 +2187,13 @@ textarea:focus-visible {
         max-height: min(56dvh, 360px);
         overflow-y: auto;
         padding: 8px;
+    }
+
+    .main,
+    .inbox-panel,
+    .blocks-panel {
+        position: relative;
+        z-index: 1;
     }
 
     .search-container {
