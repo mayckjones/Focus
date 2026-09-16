@@ -46,7 +46,17 @@ async function init() {
     if (window.FocusCloud?.configured && !user) return;
 
     if (!launchedFromOrganizer) {
-        clearState();
+        if (window.FocusCloud?.removeLocalState) {
+            window.FocusCloud.removeLocalState('focusAppState');
+        } else {
+            localStorage.removeItem('focusAppState');
+        }
+        tasks = [];
+        currentIndex = 0;
+        blockTitle = '';
+        blockId = null;
+        fromOrganizer = false;
+        updateBlockBadge();
         showScreen(screenAdd);
         return;
     }
@@ -496,4 +506,5 @@ btnResume.addEventListener('click', () => {
 
 // Inicia o app
 init();
+
 

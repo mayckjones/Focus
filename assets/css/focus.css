@@ -1,4 +1,4 @@
-:root {
+﻿:root {
     --primary: #0078D4; /* Microsoft Blue */
     --primary-hover: #106EBE;
     --bg-color: #F3F2F1;
@@ -66,7 +66,7 @@ body {
     flex-direction: column;
 }
 
-/* A tela de foco funciona como uma sessão de trabalho dedicada. */
+/* A tela de foco funciona como uma sessÃ£o de trabalho dedicada. */
 body:has(#screen-focus.active) {
     background: radial-gradient(ellipse at 50% 0%, rgba(0, 120, 212, .16), transparent 55%), var(--bg-color);
 }
@@ -513,4 +513,25 @@ textarea:focus {
         margin-bottom: 20px;
     }
     .progress-container { margin: 12px auto 22px; }
+}
+
+/* Garantir contraste dos textos no Modo Foco em tema escuro. */
+[data-theme="dark"] body,
+[data-theme="dark"] .container,
+[data-theme="dark"] .task-text,
+[data-theme="dark"] .option-title,
+[data-theme="dark"] .ocr-status,
+[data-theme="dark"] .btn-secondary,
+[data-theme="dark"] .top-btn,
+[data-theme="dark"] .done-content,
+[data-theme="dark"] .done-content h2,
+[data-theme="dark"] .done-content p,
+[data-theme="dark"] .focus-subtask-text {
+    color: var(--text-main);
+}
+
+[data-theme="dark"] .subtitle,
+[data-theme="dark"] .progress-text,
+[data-theme="dark"] .paste-info {
+    color: var(--text-muted);
 }
