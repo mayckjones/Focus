@@ -15,7 +15,7 @@
 .focus-account-actions button { width:100%; padding:8px 9px; color:var(--text,#1a1d23); background:transparent; border:0; border-radius:8px; text-align:left; font:600 12px Inter,"Segoe UI",system-ui,sans-serif; cursor:pointer; }
 .focus-account-actions button:hover { background:var(--bg-secondary,#f1f3f5); }
 .focus-account-actions .danger { color:#b42318; }
-.focus-account-actions button:disabled { cursor:not-allowed; opacity:.5; }
+.focus-account-actions button:disabled { cursor:default; opacity:.5; }
 .focus-password-form { display:grid; gap:6px; padding-top:8px; }
 .focus-password-form input { padding:8px; color:var(--text,#1a1d23); background:transparent; border:1px solid var(--border,#d1d5db); border-radius:7px; font:12px Inter,"Segoe UI",system-ui,sans-serif; }
 .focus-password-form button { padding:8px; color:#fff; background:var(--primary,#0078d4); border:0; border-radius:7px; font-weight:700; cursor:pointer; }
@@ -30,10 +30,6 @@
 .focus-delete-form input { padding:8px; color:var(--text,#1a1d23); background:transparent; border:1px solid var(--border,#d1d5db); border-radius:7px; font:12px Inter,"Segoe UI",system-ui,sans-serif; }
 .focus-delete-form button { padding:8px; color:#fff; background:#b42318; border:0; border-radius:7px; font:700 12px Inter,"Segoe UI",system-ui,sans-serif; cursor:pointer; }
 .focus-delete-form button:disabled { cursor:wait; opacity:.72; }
-
-.focus-account-actions button:disabled {
-    cursor: default;
-}
 
 .focus-cloud-status {
     position: fixed;

@@ -1,0 +1,7 @@
+# Arquivos temporários de testes e ferramentas locais
+tmp/
+
+# Arquivos gerados pelo sistema operacional e logs locais
+Thumbs.db
+.DS_Store
+*.log

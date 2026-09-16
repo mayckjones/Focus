@@ -5,9 +5,119 @@
     let currentUser = null;
     let organizerSaveTimer = null;
     let focusSaveTimer = null;
+    let cloudWriteQueue = Promise.resolve();
+    let cloudRowExists = false;
+    let knownRemoteUpdatedAt = null;
+
+    const LOCAL_STATE_KEYS = ['focusOrganizerState', 'focusAppState'];
+    const MAX_LOCAL_BACKUPS = 5;
 
     function clone(value) {
         return JSON.parse(JSON.stringify(value));
+    }
+
+    function storageKey(baseKey, userId = currentUser?.id) {
+        return userId ? `${baseKey}:${userId}` : baseKey;
+    }
+
+    function storageMetadataKey(baseKey, userId = currentUser?.id) {
+        return `${storageKey(baseKey, userId)}:metadata`;
+    }
+
+    function storageBackupsKey(baseKey, userId = currentUser?.id) {
+        return `${storageKey(baseKey, userId)}:backups`;
+    }
+
+    function migrateLegacyLocalState(user) {
+        if (!user?.id) return;
+        LOCAL_STATE_KEYS.forEach(baseKey => {
+            const legacyValue = localStorage.getItem(baseKey);
+            const scopedKey = storageKey(baseKey, user.id);
+            if (legacyValue && !localStorage.getItem(scopedKey)) {
+                localStorage.setItem(scopedKey, legacyValue);
+                localStorage.setItem(storageMetadataKey(baseKey, user.id), JSON.stringify({
+                    savedAt: null,
+                    source: 'legacy-migration'
+                }));
+            }
+            localStorage.removeItem(baseKey);
+        });
+    }
+
+    function readLocalRecord(baseKey) {
+        try {
+            const raw = localStorage.getItem(storageKey(baseKey));
+            const metadataRaw = localStorage.getItem(storageMetadataKey(baseKey));
+            return {
+                state: raw ? JSON.parse(raw) : null,
+                savedAt: metadataRaw ? JSON.parse(metadataRaw).savedAt || null : null
+            };
+        } catch (error) {
+            console.warn(`Não foi possível ler ${baseKey} localmente:`, error);
+            return { state: null, savedAt: null };
+        }
+    }
+
+    function readLocalBackups(baseKey) {
+        try {
+            const raw = localStorage.getItem(storageBackupsKey(baseKey));
+            return raw ? JSON.parse(raw) : [];
+        } catch (error) {
+            console.warn(`Não foi possível ler os backups de ${baseKey}:`, error);
+            return [];
+        }
+    }
+
+    function writeLocalState(baseKey, value, options = {}) {
+        const key = storageKey(baseKey);
+        const serialized = JSON.stringify(value);
+        const backupsKey = storageBackupsKey(baseKey);
+        const metadataKey = storageMetadataKey(baseKey);
+        try {
+            const previous = localStorage.getItem(key);
+            if (previous && previous !== serialized && options.backup !== false) {
+                const backups = readLocalBackups(baseKey);
+                backups.unshift({
+                    savedAt: new Date().toISOString(),
+                    reason: options.reason || 'before-change',
+                    state: JSON.parse(previous)
+                });
+                try {
+                    localStorage.setItem(backupsKey, JSON.stringify(backups.slice(0, MAX_LOCAL_BACKUPS)));
+                } catch (backupError) {
+                    // O estado atual tem prioridade quando o limite do navegador é atingido.
+                    console.warn(`Não foi possível criar um backup local de ${baseKey}:`, backupError);
+                }
+            }
+            try {
+                localStorage.setItem(key, serialized);
+            } catch (saveError) {
+                // Libera somente backups derivados e tenta preservar o estado atual.
+                localStorage.removeItem(backupsKey);
+                localStorage.setItem(key, serialized);
+            }
+            localStorage.setItem(metadataKey, JSON.stringify({
+                savedAt: options.savedAt || new Date().toISOString(),
+                source: options.source || 'local'
+            }));
+            return true;
+        } catch (error) {
+            console.error(`Não foi possível salvar ${baseKey} localmente:`, error);
+            return false;
+        }
+    }
+
+    function removeLocalState(baseKey) {
+        localStorage.removeItem(storageKey(baseKey));
+        localStorage.removeItem(storageMetadataKey(baseKey));
+        localStorage.removeItem(storageBackupsKey(baseKey));
+    }
+
+    function cancelPendingSaves() {
+        window.clearTimeout(organizerSaveTimer);
+        window.clearTimeout(focusSaveTimer);
+        organizerSaveTimer = null;
+        focusSaveTimer = null;
     }
 
     function showCloudStatus(message, type) {
@@ -55,6 +165,7 @@
                 location.replace(`login.html?returnTo=${returnTo}`);
                 return null;
             }
+            migrateLegacyLocalState(user);
             installAccountButton(user);
             return user;
         } catch (error) {
@@ -64,46 +175,96 @@
         }
     }
 
-    async function loadColumn(column) {
+    async function loadColumnRecord(column) {
         const user = await getUser();
-        if (!user) return null;
+        if (!user) return { state: null, updatedAt: null, exists: false };
+        const requestedUserId = user.id;
 
         const { data, error } = await client
             .from('focus_user_states')
-            .select(column)
+            .select(`${column}, updated_at`)
             .eq('user_id', user.id)
             .maybeSingle();
 
         if (error) throw error;
-        return data ? data[column] : null;
+        if (currentUser?.id !== requestedUserId) {
+            throw new Error('A conta mudou durante o carregamento dos dados.');
+        }
+        cloudRowExists = Boolean(data);
+        knownRemoteUpdatedAt = data?.updated_at || null;
+        return { state: data ? data[column] : null, updatedAt: data?.updated_at || null, exists: Boolean(data) };
     }
 
-    async function saveColumns(values) {
+    async function saveColumns(values, expectedUserId) {
         const user = await getUser();
-        if (!user) return;
+        if (!user || user.id !== expectedUserId) {
+            throw new Error('Salvamento cancelado porque a conta ativa mudou.');
+        }
 
-        const { error } = await client
-            .from('focus_user_states')
-            .upsert({
-                user_id: user.id,
-                ...values,
-                updated_at: new Date().toISOString()
-            }, { onConflict: 'user_id' });
+        const nextUpdatedAt = new Date().toISOString();
+        let data;
+        let error;
+        if (cloudRowExists && knownRemoteUpdatedAt) {
+            ({ data, error } = await client
+                .from('focus_user_states')
+                .update({ ...values, updated_at: nextUpdatedAt })
+                .eq('user_id', expectedUserId)
+                .eq('updated_at', knownRemoteUpdatedAt)
+                .select('updated_at')
+                .maybeSingle());
+            if (!error && !data) {
+                const conflict = new Error('A nuvem possui uma versão mais recente. A cópia local foi preservada.');
+                conflict.code = 'FOCUS_SYNC_CONFLICT';
+                throw conflict;
+            }
+        } else {
+            ({ data, error } = await client
+                .from('focus_user_states')
+                .insert({ user_id: expectedUserId, ...values, updated_at: nextUpdatedAt })
+                .select('updated_at')
+                .single());
+            if (error?.code === '23505') {
+                const conflict = new Error('Outra aba criou uma versão na nuvem. A cópia local foi preservada.');
+                conflict.code = 'FOCUS_SYNC_CONFLICT';
+                throw conflict;
+            }
+        }
 
         if (error) throw error;
+        if (currentUser?.id !== expectedUserId) {
+            throw new Error('A conta mudou durante o salvamento.');
+        }
+        cloudRowExists = true;
+        knownRemoteUpdatedAt = data?.updated_at || nextUpdatedAt;
         // Salvamentos bem-sucedidos acontecem em silêncio para não interromper o fluxo.
+    }
+
+    function enqueueCloudSave(values, expectedUserId) {
+        const operation = cloudWriteQueue.then(() => saveColumns(values, expectedUserId));
+        cloudWriteQueue = operation.catch(() => undefined);
+        return operation;
+    }
+
+    function handleSaveError(label, error) {
+        console.error(`Erro ao salvar ${label} no Supabase:`, error);
+        showCloudStatus(
+            error?.code === 'FOCUS_SYNC_CONFLICT'
+                ? 'Conflito detectado: sua cópia local foi preservada'
+                : 'Salvo localmente; nuvem indisponível',
+            error?.code === 'FOCUS_SYNC_CONFLICT' ? 'warning' : 'error'
+        );
     }
 
     function scheduleOrganizerSave(state) {
         if (!client || !currentUser) return;
         const snapshot = clone(state);
+        const expectedUserId = currentUser.id;
         window.clearTimeout(organizerSaveTimer);
         organizerSaveTimer = window.setTimeout(async () => {
             try {
-                await saveColumns({ organizer_state: snapshot });
+                await enqueueCloudSave({ organizer_state: snapshot }, expectedUserId);
             } catch (error) {
-                console.error('Erro ao salvar organizador no Supabase:', error);
-                showCloudStatus('Salvo localmente; nuvem indisponível', 'error');
+                handleSaveError('organizador', error);
             }
         }, 450);
     }
@@ -111,13 +272,13 @@
     function scheduleFocusSave(state) {
         if (!client || !currentUser) return;
         const snapshot = clone(state);
+        const expectedUserId = currentUser.id;
         window.clearTimeout(focusSaveTimer);
         focusSaveTimer = window.setTimeout(async () => {
             try {
-                await saveColumns({ focus_state: snapshot });
+                await enqueueCloudSave({ focus_state: snapshot }, expectedUserId);
             } catch (error) {
-                console.error('Erro ao salvar sessão de foco no Supabase:', error);
-                showCloudStatus('Salvo localmente; nuvem indisponível', 'error');
+                handleSaveError('sessão de foco', error);
             }
         }, 250);
     }
@@ -125,20 +286,11 @@
     async function clearFocusState() {
         if (!client || !currentUser) return;
         window.clearTimeout(focusSaveTimer);
+        const expectedUserId = currentUser.id;
         try {
-            await saveColumns({ focus_state: {} });
+            await enqueueCloudSave({ focus_state: {} }, expectedUserId);
         } catch (error) {
-            console.error('Erro ao limpar sessão de foco no Supabase:', error);
-        }
-    }
-
-    function getLocalJson(key) {
-        try {
-            const raw = localStorage.getItem(key);
-            return raw ? JSON.parse(raw) : null;
-        } catch (error) {
-            console.warn(`Não foi possível ler ${key} localmente:`, error);
-            return null;
+            handleSaveError('sessão de foco', error);
         }
     }
 
@@ -185,14 +337,18 @@
             }
         }
 
-        const localOrganizerState = getLocalJson('focusOrganizerState');
-        const localFocusState = getLocalJson('focusAppState');
+        const localOrganizerState = readLocalRecord('focusOrganizerState').state;
+        const localFocusState = readLocalRecord('focusAppState').state;
         return {
             format: 'focus-export',
             exported_at: new Date().toISOString(),
             account: { email: user.email || null, metadata: safeUserMetadata(user.user_metadata) },
             organizer_state: localOrganizerState ?? cloudState?.organizer_state ?? null,
             focus_state: localFocusState ?? cloudState?.focus_state ?? null,
+            local_backups: {
+                organizer: readLocalBackups('focusOrganizerState'),
+                focus: readLocalBackups('focusAppState')
+            },
             profile_photo: avatar
         };
     }
@@ -270,12 +426,15 @@
         const panel = document.createElement('div');
         panel.className = 'focus-account-panel';
         panel.hidden = true;
-        panel.innerHTML = `<div class="focus-account-summary"><div class="focus-account-avatar">${initials}</div><div class="focus-account-email">${email}</div></div><div class="focus-account-actions"><button type="button" class="focus-avatar-action">Foto de perfil</button><button type="button" class="focus-avatar-remove" ${user.user_metadata?.avatar_path ? '' : 'disabled'}>Remover foto</button><button type="button" class="focus-password-action">Trocar senha</button><button type="button" class="focus-export-action">Baixar dados</button><button type="button" class="focus-report-action">Relatório visual</button><button type="button" class="focus-delete-action danger">Excluir conta</button></div>`;
+        panel.innerHTML = '<div class="focus-account-summary"><div class="focus-account-avatar"></div><div class="focus-account-email"></div></div><div class="focus-account-actions"><button type="button" class="focus-avatar-action">Foto de perfil</button><button type="button" class="focus-avatar-remove">Remover foto</button><button type="button" class="focus-password-action">Trocar senha</button><button type="button" class="focus-export-action">Baixar dados</button><button type="button" class="focus-report-action">Relatório visual</button><button type="button" class="focus-delete-action danger">Excluir conta</button></div>';
         const fileInput = document.createElement('input');
         fileInput.type = 'file'; fileInput.accept = 'image/png,image/jpeg,image/webp'; fileInput.hidden = true;
         const avatarAction = panel.querySelector('.focus-avatar-action');
         const removeAvatar = panel.querySelector('.focus-avatar-remove');
         const avatarPreview = panel.querySelector('.focus-account-avatar');
+        avatarPreview.textContent = initials;
+        panel.querySelector('.focus-account-email').textContent = email;
+        removeAvatar.disabled = !user.user_metadata?.avatar_path;
         const exportAction = panel.querySelector('.focus-export-action');
         const reportAction = panel.querySelector('.focus-report-action');
         const deleteAction = panel.querySelector('.focus-delete-action');
@@ -284,7 +443,7 @@
             if (panel.querySelector('.focus-password-form')) return;
             const form = document.createElement('form');
             form.className = 'focus-password-form';
-            form.innerHTML = '<input required type="password" name="current" placeholder="Senha atual"><input required minlength="6" type="password" name="next" placeholder="Nova senha (mín. 6)"><input required minlength="6" type="password" name="confirm" placeholder="Confirmar nova senha"><button type="button" class="focus-toggle-passwords" aria-pressed="false">Mostrar senhas</button><button type="submit">Salvar senha</button><p aria-live="polite"></p>';
+            form.innerHTML = '<input required type="password" name="current" autocomplete="current-password" placeholder="Senha atual"><input required minlength="8" type="password" name="next" autocomplete="new-password" placeholder="Nova senha (mín. 8)"><input required minlength="8" type="password" name="confirm" autocomplete="new-password" placeholder="Confirmar nova senha"><button type="button" class="focus-toggle-passwords" aria-pressed="false">Mostrar senhas</button><button type="submit">Salvar senha</button><p aria-live="polite"></p>';
             form.querySelector('.focus-toggle-passwords').addEventListener('click', (toggle) => {
                 const visible = toggle.currentTarget.getAttribute('aria-pressed') !== 'true';
                 form.querySelectorAll('input').forEach(input => { input.type = visible ? 'text' : 'password'; });
@@ -310,17 +469,18 @@
                 submit.disabled = true;
                 submit.textContent = 'Confirmando…';
                 try {
-                    const accountEmail = currentUser?.email || email;
-                    const { error: authError } = await client.auth.signInWithPassword({ email: accountEmail, password: data.get('current') });
-                    if (authError) {
-                        console.error('Falha ao reautenticar:', authError);
-                        setStatus('Não foi possível validar a senha atual. A senha não foi alterada.', 'error');
-                        return;
-                    }
-                    const { error } = await client.auth.updateUser({ password: next });
+                    const { error } = await client.auth.updateUser({
+                        password: next,
+                        current_password: data.get('current')
+                    });
                     if (error) {
                         console.error('Falha ao atualizar a senha:', error);
-                        setStatus('Não foi possível alterar a senha. Tente novamente.', 'error');
+                        setStatus(
+                            /password|credential|invalid/i.test(error.message || '')
+                                ? 'A senha atual não foi validada. A senha não foi alterada.'
+                                : 'Não foi possível alterar a senha. Tente novamente.',
+                            'error'
+                        );
                         return;
                     }
                     setStatus('Senha alterada com sucesso.', 'success');
@@ -389,7 +549,9 @@
                 try {
                     const { error } = await client.rpc('delete_own_account');
                     if (error) throw error;
-                    ['focusOrganizerState', 'focusAppState', 'focusOrganizerTheme'].forEach(key => localStorage.removeItem(key));
+                    removeLocalState('focusOrganizerState');
+                    removeLocalState('focusAppState');
+                    localStorage.removeItem('focusOrganizerTheme');
                     try { await client.auth.signOut({ scope: 'local' }); } catch (signOutError) { console.warn('Sessão já foi invalidada:', signOutError); }
                     location.replace('login.html?deleted=1');
                 } catch (error) {
@@ -405,9 +567,20 @@
         fileInput.addEventListener('change', async () => {
             const file = fileInput.files?.[0]; if (!file) return;
             if (file.size > 2 * 1024 * 1024) { showCloudStatus('A foto deve ter no máximo 2 MB', 'warning'); return; }
+            const allowedImageTypes = new Map([
+                ['image/jpeg', 'jpg'],
+                ['image/png', 'png'],
+                ['image/webp', 'webp']
+            ]);
+            const safeExtension = allowedImageTypes.get(file.type);
+            if (!safeExtension) {
+                showCloudStatus('Use uma imagem JPG, PNG ou WebP', 'warning');
+                fileInput.value = '';
+                return;
+            }
             avatarAction.disabled = true;
             try {
-                const path = `${user.id}/avatar.${file.name.split('.').pop().toLowerCase()}`;
+                const path = `${user.id}/avatar.${safeExtension}`;
                 const { error } = await client.storage.from('focus-avatars').upload(path, file, { upsert: true, contentType: file.type });
                 if (error) throw error;
                 const previousPath = user.user_metadata?.avatar_path;
@@ -462,18 +635,32 @@
 
     if (client) {
         client.auth.onAuthStateChange((_event, session) => {
-            currentUser = session?.user || null;
+            const nextUser = session?.user || null;
+            if (currentUser?.id && currentUser.id !== nextUser?.id) {
+                cancelPendingSaves();
+                cloudWriteQueue = Promise.resolve();
+                cloudRowExists = false;
+                knownRemoteUpdatedAt = null;
+            }
+            currentUser = nextUser;
         });
     }
 
     window.FocusCloud = {
         configured: Boolean(client),
         requireUser,
-        loadOrganizerState: () => loadColumn('organizer_state'),
-        loadFocusState: () => loadColumn('focus_state'),
+        loadOrganizerRecord: () => loadColumnRecord('organizer_state'),
+        loadFocusRecord: () => loadColumnRecord('focus_state'),
+        loadOrganizerState: async () => (await loadColumnRecord('organizer_state')).state,
+        loadFocusState: async () => (await loadColumnRecord('focus_state')).state,
         scheduleOrganizerSave,
         scheduleFocusSave,
         clearFocusState,
+        readLocalRecord,
+        readLocalBackups,
+        writeLocalState,
+        removeLocalState,
+        storageKey,
         showStatus: showCloudStatus
     };
 })();

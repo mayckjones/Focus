@@ -3,38 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="same-origin">
     <title>Entrar — Focus</title>
-    <link rel="icon" type="image/png" href="Logo/Documento2.png">
-    <style>
-        :root { --primary: #0078d4; --primary-hover: #106ebe; --text: #1a1d23; --muted: #65676b; --border: #d1d5db; }
-        * { box-sizing: border-box; }
-        body { min-height: 100vh; margin: 0; display: grid; place-items: center; padding: 20px; color: var(--text); background: radial-gradient(circle at 10% 10%, rgba(0,120,212,.17), transparent 30rem), #f0f2f5; font-family: Inter, "Segoe UI", system-ui, sans-serif; }
-        .card { width: min(440px, 100%); padding: 34px; background: #fff; border: 1px solid #e5e7eb; border-radius: 22px; box-shadow: 0 24px 70px rgba(20,40,60,.14); }
-        .brand { display: flex; align-items: center; gap: 12px; margin-bottom: 30px; font-weight: 800; }
-        .brand img { width: 42px; height: 42px; border-radius: 12px; }
-        h1 { margin: 0; font-size: 28px; letter-spacing: -.04em; }
-        .subtitle { margin: 7px 0 26px; color: var(--muted); }
-        .tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 24px; padding: 5px; background: #f3f4f6; border-radius: 12px; }
-        .tab { padding: 9px; color: var(--muted); background: transparent; border: 0; border-radius: 9px; cursor: pointer; font-weight: 700; }
-        .tab.active { color: var(--primary); background: #fff; box-shadow: 0 2px 10px rgba(0,0,0,.07); }
-        form { display: grid; gap: 17px; }
-        .field { display: grid; gap: 7px; }
-        label { font-size: 13px; font-weight: 700; }
-        input { width: 100%; min-height: 46px; padding: 11px 13px; color: var(--text); background: #fff; border: 1px solid var(--border); border-radius: 10px; outline: none; font: inherit; }
-        input:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(0,120,212,.11); }
-        .submit { min-height: 46px; margin-top: 3px; color: #fff; background: var(--primary); border: 0; border-radius: 10px; cursor: pointer; font: inherit; font-weight: 800; }
-        .submit:hover { background: var(--primary-hover); }
-        .submit:disabled { cursor: wait; opacity: .65; }
-        .message { margin-top: 18px; padding: 11px 13px; border-radius: 9px; font-size: 13px; }
-        .message.error { color: #b42318; background: #fef3f2; }
-        .message.success { color: #067647; background: #ecfdf3; }
-        .message.info { color: #175cd3; background: #eff8ff; }
-        .hidden { display: none !important; }
-    </style>
+    <link rel="icon" type="image/png" href="assets/img/Documento2.png">
+    <link rel="stylesheet" href="assets/css/login.css">
 </head>
 <body>
     <main class="card">
-        <div class="brand"><img src="Logo/Documento2.png" alt=""><span>Focus</span></div>
+        <div class="brand"><img src="assets/img/Documento2.png" alt=""><span>Focus</span></div>
         <h1 id="title">Acesse sua conta</h1>
         <p id="subtitle" class="subtitle">Suas tarefas ficam salvas e protegidas na nuvem.</p>
 
@@ -54,108 +30,15 @@
             </div>
             <div id="confirmation-field" class="field hidden">
                 <label for="password-confirmation">Confirmar senha</label>
-                <input id="password-confirmation" type="password" autocomplete="new-password" minlength="6" placeholder="Digite novamente">
+                <input id="password-confirmation" type="password" autocomplete="new-password" minlength="8" placeholder="Digite novamente">
             </div>
             <button id="submit-button" class="submit" type="submit">Entrar</button>
         </form>
         <div id="message" class="message hidden" role="status" aria-live="polite"></div>
     </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="supabase-config.js"></script>
-    <script>
-        const form = document.getElementById('auth-form');
-        const loginTab = document.getElementById('login-tab');
-        const signupTab = document.getElementById('signup-tab');
-        const confirmationField = document.getElementById('confirmation-field');
-        const confirmationInput = document.getElementById('password-confirmation');
-        const submitButton = document.getElementById('submit-button');
-        const message = document.getElementById('message');
-        let mode = 'login';
-
-        function setMode(nextMode) {
-            mode = nextMode;
-            const login = mode === 'login';
-            loginTab.classList.toggle('active', login);
-            signupTab.classList.toggle('active', !login);
-            confirmationField.classList.toggle('hidden', login);
-            confirmationInput.required = !login;
-            confirmationInput.value = '';
-            submitButton.textContent = login ? 'Entrar' : 'Criar conta';
-            document.getElementById('title').textContent = login ? 'Acesse sua conta' : 'Crie sua conta';
-            message.className = 'message hidden';
-        }
-
-        function showMessage(text, type) {
-            message.textContent = text;
-            message.className = `message ${type}`;
-        }
-
-        function friendlyError(error) {
-            const text = (error?.message || '').toLowerCase();
-            if (text.includes('invalid login credentials')) return 'E-mail ou senha incorretos.';
-            if (text.includes('email not confirmed')) return 'Confirme seu e-mail antes de entrar.';
-            if (text.includes('user already registered')) return 'Este e-mail já possui uma conta.';
-            return error?.message || 'Não foi possível concluir. Tente novamente.';
-        }
-
-        loginTab.addEventListener('click', () => setMode('login'));
-        signupTab.addEventListener('click', () => setMode('signup'));
-
-        form.addEventListener('submit', async (event) => {
-            event.preventDefault();
-            if (!window.focusSupabase) {
-                showMessage('Preencha a URL e a chave pública no arquivo supabase-config.js.', 'error');
-                return;
-            }
-
-            const email = document.getElementById('email').value.trim();
-            const password = document.getElementById('password').value;
-
-            if (mode === 'signup' && password !== confirmationInput.value) {
-                showMessage('As senhas não são iguais.', 'error');
-                return;
-            }
-
-            submitButton.disabled = true;
-            submitButton.textContent = mode === 'login' ? 'Entrando...' : 'Criando...';
-
-            try {
-                if (mode === 'login') {
-                    const { error } = await window.focusSupabase.auth.signInWithPassword({ email, password });
-                    if (error) throw error;
-                    const params = new URLSearchParams(location.search);
-                    const requestedPage = params.get('returnTo') || '';
-                    const destination = requestedPage.startsWith('index.html')
-                        ? requestedPage
-                        : 'organizer.html';
-                    location.replace(destination);
-                } else {
-                    const { data, error } = await window.focusSupabase.auth.signUp({ email, password });
-                    if (error) throw error;
-                    if (data.session) {
-                        location.replace('organizer.html');
-                    } else {
-                        form.reset();
-                        showMessage('Conta criada! Confira seu e-mail e clique no link de confirmação.', 'success');
-                    }
-                }
-            } catch (error) {
-                console.error('Erro de autenticação:', error);
-                showMessage(friendlyError(error), 'error');
-            } finally {
-                submitButton.disabled = false;
-                submitButton.textContent = mode === 'login' ? 'Entrar' : 'Criar conta';
-            }
-        });
-
-        if (window.focusSupabase) {
-            window.focusSupabase.auth.getSession().then(({ data }) => {
-                if (data.session) location.replace('organizer.html');
-            });
-        } else {
-            showMessage('Falta apenas configurar a URL e a chave pública do Supabase.', 'info');
-        }
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0"></script>
+    <script src="assets/js/supabase-config.js"></script>
+    <script src="assets/js/login.js"></script>
 </body>
 </html>
