@@ -2123,7 +2123,8 @@
             }
 
             saveState();
-            renderAll();
+            refreshTaskContainersState();
+            refreshTaskVisibility();
         }
 
         // ===========================
@@ -2242,38 +2243,38 @@
         // ===========================
         // RENDER: TASK CARD
         // ===========================
+        function taskMatchesCurrentView(task) {
+            if (state.activeFilter !== 'all') {
+                if (state.activeFilter === 'atrasadas') {
+                    const todayStr = new Date().toISOString().split('T')[0];
+                    const hasPastDate = task.days.some(d => /^\d{4}-\d{2}-\d{2}$/.test(d) && d < todayStr);
+                    if (!hasPastDate) return false;
+                } else if (state.activeFilter === 'futuras') {
+                    const todayStr = new Date().toISOString().split('T')[0];
+                    const hasFutureDate = task.days.some(d => /^\d{4}-\d{2}-\d{2}$/.test(d) && d > todayStr);
+                    if (!hasFutureDate) return false;
+                } else if (!task.days.includes(state.activeFilter)) {
+                    return false;
+                }
+            }
+
+            if (state.searchQuery) {
+                const q = state.searchQuery.toLowerCase();
+                const matchTask = task.text.toLowerCase().includes(q);
+                const matchSubtask = task.subtasks && task.subtasks.some(subtask => subtask.text.toLowerCase().includes(q));
+                if (!matchTask && !matchSubtask) return false;
+            }
+
+            return true;
+        }
+
         function renderTaskCard(task) {
             const card = document.createElement('div');
             card.className = 'task-card' + (task.completed ? ' completed' : '');
             card.setAttribute('draggable', 'true');
             card.dataset.taskId = task.id;
 
-            // Apply filter visibility
-            if (state.activeFilter !== 'all') {
-                if (state.activeFilter === 'atrasadas') {
-                    const todayStr = new Date().toISOString().split('T')[0];
-                    const hasPastDate = task.days.some(d => d.match(/^\d{4}-\d{2}-\d{2}$/) && d < todayStr);
-                    if (!hasPastDate) card.classList.add('hidden-by-filter');
-                } else if (state.activeFilter === 'futuras') {
-                    const todayStr = new Date().toISOString().split('T')[0];
-                    const hasFutureDate = task.days.some(d => d.match(/^\d{4}-\d{2}-\d{2}$/) && d > todayStr);
-                    if (!hasFutureDate) card.classList.add('hidden-by-filter');
-                } else {
-                    if (!task.days.includes(state.activeFilter)) {
-                        card.classList.add('hidden-by-filter');
-                    }
-                }
-            }
-
-            // Apply search visibility
-            if (state.searchQuery) {
-                const q = state.searchQuery.toLowerCase();
-                const matchTask = task.text.toLowerCase().includes(q);
-                const matchSub = task.subtasks && task.subtasks.some(s => s.text.toLowerCase().includes(q));
-                if (!matchTask && !matchSub) {
-                    card.classList.add('hidden-by-filter');
-                }
-            }
+            card.classList.toggle('hidden-by-filter', !taskMatchesCurrentView(task));
 
             // Checkbox
             const checkbox = document.createElement('div');
@@ -2283,7 +2284,7 @@
                 e.stopPropagation();
                 task.completed = !task.completed;
                 saveState();
-                renderAll();
+                refreshTaskCard(task);
             });
 
             // Content
@@ -2324,7 +2325,7 @@
                         e.stopPropagation();
                         task.days = task.days.filter(d => d !== dayKey);
                         saveState();
-                        renderAll();
+                        refreshTaskCard(task);
                     });
                     chipsEl.appendChild(chip);
                 });
@@ -2451,7 +2452,7 @@
                     task.text = val;
                     saveState();
                 }
-                renderAll();
+                refreshTaskCard(task);
             };
 
             input.addEventListener('blur', finish);
@@ -2512,7 +2513,7 @@
                     }
                     saveState();
                     picker.remove();
-                    renderAll();
+                    refreshTaskCard(task);
                 });
                 picker.appendChild(item);
             });
@@ -2558,7 +2559,7 @@
                 }
                 saveState();
                 picker.remove();
-                renderAll();
+                refreshTaskCard(task);
             });
             dateInput.addEventListener('click', (e) => e.stopPropagation());
 
@@ -2607,9 +2608,12 @@
         }
 
         function deleteTask(taskId) {
+            const location = findTaskLocation(taskId);
             removeTaskFromSource(taskId);
             saveState();
-            renderAll();
+            const card = document.querySelector(`.task-card[data-task-id="${taskId}"]`);
+            if (card) card.remove();
+            refreshTaskContainerState(location);
         }
 
         // ===========================
@@ -2687,7 +2691,7 @@
                         block.colorVar = colorVar;
                         saveState();
                         picker.remove();
-                        renderAll();
+                        refreshBlockAppearance(block);
                     });
                     picker.appendChild(item);
                 });
@@ -2724,30 +2728,7 @@
             const count = document.createElement('span');
             count.className = 'block-count';
             
-            const q = state.searchQuery ? state.searchQuery.toLowerCase() : '';
-            const todayStr = new Date().toISOString().split('T')[0];
-
-            const visibleTasks = block.tasks.filter(task => {
-                // Filter check
-                if (state.activeFilter !== 'all') {
-                    if (state.activeFilter === 'atrasadas') {
-                        const hasPast = task.days.some(d => d.match(/^\d{4}-\d{2}-\d{2}$/) && d < todayStr);
-                        if (!hasPast) return false;
-                    } else if (state.activeFilter === 'futuras') {
-                        const hasFuture = task.days.some(d => d.match(/^\d{4}-\d{2}-\d{2}$/) && d > todayStr);
-                        if (!hasFuture) return false;
-                    } else {
-                        if (!task.days.includes(state.activeFilter)) return false;
-                    }
-                }
-                // Search check
-                if (q) {
-                    const matchTask = task.text.toLowerCase().includes(q);
-                    const matchSub = task.subtasks && task.subtasks.some(s => s.text.toLowerCase().includes(q));
-                    if (!matchTask && !matchSub) return false;
-                }
-                return true;
-            });
+            const visibleTasks = block.tasks.filter(taskMatchesCurrentView);
             count.textContent = visibleTasks.length;
 
             const actions = document.createElement('div');
@@ -2821,11 +2802,9 @@
                     }
                     block.tasks.push(newTask);
                     saveState();
-                    renderAll();
-                    setTimeout(() => {
-                        const newCard = document.querySelector(`.block-card[data-block-id="${block.id}"] .block-quick-add input`);
-                        if (newCard) newCard.focus();
-                    }, 0);
+                    quickAddInput.value = '';
+                    refreshTaskContainerState({ type: 'block', blockId: block.id });
+                    quickAddInput.focus();
                 }
             });
 
@@ -2849,11 +2828,9 @@
                     if (extractedDay) newTask.days.push(extractedDay);
                     block.tasks.push(newTask);
                     saveState();
-                    renderAll();
-                    setTimeout(() => {
-                        const newCard = document.querySelector(`.block-card[data-block-id="${block.id}"] .block-quick-add input`);
-                        if (newCard) newCard.focus();
-                    }, 0);
+                    quickAddInput.value = '';
+                    refreshTaskContainerState({ type: 'block', blockId: block.id });
+                    quickAddInput.focus();
                 }
             });
 
@@ -2921,7 +2898,9 @@
 
             state.blocks = state.blocks.filter(b => b.id !== blockId);
             saveState();
-            renderAll();
+            const blockCard = document.querySelector(`.block-card[data-block-id="${blockId}"]`);
+            if (blockCard) blockCard.remove();
+            refreshTaskContainerState({ type: 'inbox', blockId: null });
         }
 
         function addBlock() {
@@ -2935,7 +2914,9 @@
             };
             state.blocks.push(block);
             saveState();
-            renderAll();
+            const blocksPanel = document.getElementById('blocks-panel');
+            const addButton = blocksPanel.querySelector('.add-block-card');
+            blocksPanel.insertBefore(renderBlock(block), addButton || null);
         }
 
         function focusOnBlock(block) {
@@ -2957,10 +2938,106 @@
             window.location.href = 'index.html?mode=focus';
         }
 
+        function getTasksForLocation(location) {
+            if (!location || location.type === 'unknown') return [];
+            if (location.type === 'inbox') return state.inbox;
+            const block = state.blocks.find(item => item.id === location.blockId);
+            return block ? block.tasks : [];
+        }
+
+        function getTaskContainerForLocation(location) {
+            if (!location || location.type === 'unknown') return null;
+            if (location.type === 'inbox') return document.getElementById('inbox-tasks');
+            return document.querySelector(`.block-card[data-block-id="${location.blockId}"] .block-tasks`);
+        }
+
+        function appendEmptyTaskState(container, location) {
+            if (location.type === 'inbox') {
+                const empty = document.createElement('div');
+                empty.className = 'inbox-empty';
+                empty.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg><span>Nenhuma tarefa no inbox.<br>Digite acima para adicionar.</span>';
+                container.appendChild(empty);
+                return;
+            }
+
+            const empty = document.createElement('div');
+            empty.className = 'block-empty';
+            empty.textContent = 'Arraste tarefas aqui';
+            container.appendChild(empty);
+        }
+
+        function refreshTaskContainerState(location) {
+            const container = getTaskContainerForLocation(location);
+            if (!container) return;
+
+            const tasks = getTasksForLocation(location);
+            const desiredIds = new Set(tasks.map(task => task.id));
+            container.querySelectorAll('.block-empty, .inbox-empty').forEach(empty => empty.remove());
+            container.querySelectorAll('.task-card').forEach(card => {
+                if (!desiredIds.has(card.dataset.taskId)) card.remove();
+            });
+
+            tasks.forEach((task, index) => {
+                let card = container.querySelector(`.task-card[data-task-id="${task.id}"]`);
+                if (!card) card = renderTaskCard(task);
+                const cards = container.querySelectorAll('.task-card');
+                const cardAtIndex = cards[index];
+                if (cardAtIndex !== card) container.insertBefore(card, cardAtIndex || null);
+            });
+
+            if (tasks.length === 0) appendEmptyTaskState(container, location);
+            refreshTaskVisibility();
+        }
+
+        function refreshTaskContainersState() {
+            refreshTaskContainerState({ type: 'inbox', blockId: null });
+            state.blocks.forEach(block => {
+                refreshTaskContainerState({ type: 'block', blockId: block.id });
+            });
+        }
+
+        function refreshTaskCard(task) {
+            const currentCard = document.querySelector(`.task-card[data-task-id="${task.id}"]`);
+            if (currentCard) currentCard.replaceWith(renderTaskCard(task));
+
+            if (currentEditingTask && currentEditingTask.id === task.id) {
+                document.getElementById('side-panel-title').textContent = task.text;
+            }
+
+            refreshTaskVisibility();
+        }
+
+        function refreshBlockAppearance(block) {
+            const blockCard = document.querySelector(`.block-card[data-block-id="${block.id}"]`);
+            if (!blockCard) return;
+            const colors = getBlockCSSVars(block.colorVar);
+            blockCard.style.borderTopColor = colors.dot;
+            const dot = blockCard.querySelector('.block-color-dot');
+            if (dot) dot.style.background = colors.dot;
+        }
+
+        function refreshTaskVisibility() {
+            document.querySelectorAll('.task-card').forEach(card => {
+                const task = getTaskById(card.dataset.taskId);
+                card.classList.toggle('hidden-by-filter', !task || !taskMatchesCurrentView(task));
+            });
+
+            state.blocks.forEach(block => {
+                const blockCard = document.querySelector(`.block-card[data-block-id="${block.id}"]`);
+                const count = blockCard?.querySelector('.block-actions > .block-count');
+                if (count) count.textContent = block.tasks.filter(taskMatchesCurrentView).length;
+            });
+
+            document.getElementById('inbox-count').textContent = state.inbox.length;
+            document.querySelectorAll('.filter-chip').forEach(chip => {
+                chip.classList.toggle('active', chip.dataset.filter === state.activeFilter);
+            });
+        }
+
         // ===========================
-        // RENDER: ALL
+        // INITIAL RENDER
         // ===========================
-        function renderAll() {
+        function renderInitialView() {
             // Render blocks
             const blocksPanel = document.getElementById('blocks-panel');
             blocksPanel.innerHTML = '';
@@ -3073,7 +3150,7 @@
             });
             if (lines.length > 0) {
                 saveState();
-                renderAll();
+                refreshTaskContainerState({ type: 'inbox', blockId: null });
             }
         }
 
@@ -3117,7 +3194,7 @@
             if (!chip) return;
             state.activeFilter = chip.dataset.filter;
             saveState();
-            renderAll();
+            refreshTaskVisibility();
         });
 
         // ===========================
@@ -3628,7 +3705,7 @@
             });
 
             saveState();
-            renderAll();
+            refreshTaskContainerState({ type: 'inbox', blockId: null });
             closePdfImportModal();
             showToast(`✓ ${importedCount} tarefas importadas com sucesso para o Inbox!`);
         });
@@ -3693,7 +3770,6 @@
             sidePanel.classList.remove('active');
             sidePanelOverlay.classList.remove('active');
             currentEditingTask = null;
-            renderAll();
         }
 
         document.getElementById('side-panel-close').addEventListener('click', closeSidePanel);
@@ -3716,6 +3792,7 @@
                     subtask.completed = !subtask.completed;
                     saveState();
                     renderSubtasks();
+                    refreshTaskCard(currentEditingTask);
                 });
 
                 const textEl = document.createElement('div');
@@ -3748,7 +3825,7 @@
                             saveState();
                         }
                         renderSubtasks();
-                        renderAll();
+                        refreshTaskCard(currentEditingTask);
                     };
 
                     input.addEventListener('blur', finish);
@@ -3773,7 +3850,8 @@
                     state.inbox.unshift(newTask);
                     saveState();
                     renderSubtasks();
-                    renderAll();
+                    refreshTaskCard(currentEditingTask);
+                    refreshTaskContainerState({ type: 'inbox', blockId: null });
                 });
 
                 const delBtn = document.createElement('button');
@@ -3785,6 +3863,7 @@
                     currentEditingTask.subtasks.splice(index, 1);
                     saveState();
                     renderSubtasks();
+                    refreshTaskCard(currentEditingTask);
                 });
 
                 actions.appendChild(promoteBtn);
@@ -3810,6 +3889,7 @@
                     });
                     saveState();
                     renderSubtasks();
+                    refreshTaskCard(currentEditingTask);
                     subtaskInputEl.value = '';
                 }
             }
@@ -3841,14 +3921,11 @@
                 searchInput.value = state.searchQuery || '';
                 searchInput.addEventListener('input', (e) => {
                     state.searchQuery = e.target.value;
-                    renderAll();
-                    // Retain focus correctly
-                    const el = document.getElementById('search-input');
-                    if (el) el.focus();
+                    refreshTaskVisibility();
                 });
             }
 
-            renderAll();
+            renderInitialView();
             inboxInput.focus();
         }
 
