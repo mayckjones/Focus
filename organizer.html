@@ -87,6 +87,9 @@
             --radius-sm: 8px;
             --radius-xs: 6px;
             --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            --motion-fast: 120ms;
+            --motion-base: 180ms;
+            --motion-ease: cubic-bezier(0.2, 0, 0, 1);
 
             /* Glass */
             --glass-bg: rgba(255,255,255,0.7);
@@ -212,7 +215,7 @@
         .header {
             position: sticky;
             top: 0;
-            z-index: 100;
+            z-index: 200;
             background: var(--glass-bg);
             backdrop-filter: blur(var(--glass-blur));
             -webkit-backdrop-filter: blur(var(--glass-blur));
@@ -296,13 +299,15 @@
 
         /* ========== FILTER BAR ========== */
         .filter-bar {
+            position: relative;
+            z-index: 130;
             padding: 10px 24px;
             background: var(--surface);
             border-bottom: 1px solid var(--border-light);
             display: flex;
             align-items: center;
             gap: 8px;
-            overflow-x: auto;
+            overflow: visible;
             scrollbar-width: none;
         }
 
@@ -354,6 +359,62 @@
             height: 6px;
             border-radius: 50%;
             flex-shrink: 0;
+        }
+
+        .weekday-filter {
+            position: relative;
+        }
+
+        .weekday-filter-toggle svg {
+            width: 14px;
+            height: 14px;
+            flex-shrink: 0;
+        }
+
+        .weekday-filter-menu {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            z-index: 120;
+            display: none;
+            min-width: 146px;
+            padding: 5px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            box-shadow: var(--shadow-md);
+        }
+
+        .weekday-filter.open .weekday-filter-menu {
+            display: grid;
+            gap: 2px;
+        }
+
+        .weekday-filter-menu .filter-chip {
+            width: 100%;
+            border: 0;
+            border-radius: var(--radius-xs);
+            text-align: left;
+        }
+
+        .filter-bar.organizing-filters .filter-orderable,
+        .weekday-filter-menu.organizing-filters .filter-orderable {
+            cursor: grab;
+        }
+
+        .filter-orderable.filter-dragging {
+            opacity: 0.45;
+        }
+
+        .organize-filters-btn {
+            min-width: 0;
+            padding: 5px 8px;
+            justify-content: center;
+        }
+
+        .organize-filters-btn svg {
+            width: 13px;
+            height: 13px;
         }
 
         .search-container {
@@ -418,23 +479,49 @@
             min-width: 0;
             display: flex;
             flex-direction: column;
+            cursor: default;
             background: var(--glass-bg);
             backdrop-filter: blur(var(--glass-blur));
             -webkit-backdrop-filter: blur(var(--glass-blur));
             border: 1px solid var(--glass-border);
             border-radius: var(--radius);
             box-shadow: var(--shadow-sm);
-            transition: all var(--transition);
+            transition: border-color var(--motion-base) var(--motion-ease),
+                        box-shadow var(--motion-base) var(--motion-ease),
+                        background-color var(--motion-base) var(--motion-ease),
+                        opacity var(--motion-fast) ease,
+                        transform var(--motion-base) var(--motion-ease);
             overflow: hidden;
         }
 
         .block-card:hover {
             box-shadow: var(--shadow-md);
+            background: var(--surface);
         }
 
         .block-card.drag-over {
             border-color: var(--primary);
             box-shadow: var(--shadow-glow);
+        }
+
+        .block-card.dragging-block {
+            opacity: 0.55;
+            transform: scale(0.995);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .block-card.block-entering {
+            animation: blockEnter var(--motion-base) var(--motion-ease) both;
+        }
+
+        .block-card.block-removing {
+            opacity: 0;
+            transform: scale(0.985);
+        }
+
+        @keyframes blockEnter {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .block-header {
@@ -645,9 +732,8 @@
 
         /* Add Block Card */
         .add-block-card {
-            grid-column: 1 / -1;
             width: 100%;
-            min-height: 80px;
+            min-height: 190px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -835,17 +921,28 @@
             background: var(--surface);
             border: 1px solid var(--border-light);
             border-radius: var(--radius-sm);
-            cursor: grab;
-            transition: border-color var(--transition), box-shadow var(--transition), background var(--transition);
+            cursor: default;
+            transition: border-color var(--motion-fast) ease,
+                        box-shadow var(--motion-fast) ease,
+                        background-color var(--motion-base) ease,
+                        color var(--motion-base) ease,
+                        opacity var(--motion-fast) ease,
+                        transform var(--motion-base) var(--motion-ease),
+                        height var(--motion-base) var(--motion-ease),
+                        padding var(--motion-base) var(--motion-ease),
+                        border-width var(--motion-base) var(--motion-ease);
             position: relative;
             user-select: none;
-            animation: fadeSlideIn 0.25s ease;
         }
 
-        @keyframes fadeSlideIn {
+        .task-card.task-entering {
+            animation: taskEnter var(--motion-base) var(--motion-ease) both;
+        }
+
+        @keyframes taskEnter {
             from {
                 opacity: 0;
-                transform: translateY(-6px);
+                transform: translateY(-4px);
             }
             to {
                 opacity: 1;
@@ -856,12 +953,33 @@
         .task-card:hover {
             border-color: var(--border);
             box-shadow: var(--shadow-sm);
+            background: var(--surface-hover);
         }
 
         .task-card.dragging {
-            opacity: 0.4;
-            cursor: grabbing;
+            opacity: 0.55;
+            cursor: default;
             animation: none;
+            transform: scale(0.99);
+            box-shadow: var(--shadow-md);
+        }
+
+        .task-card.task-removing {
+            opacity: 0;
+            height: 0 !important;
+            padding-top: 0;
+            padding-bottom: 0;
+            border-width: 0;
+            overflow: hidden;
+            transform: translateX(8px);
+            pointer-events: none;
+        }
+
+        .block-card,
+        .block-card *,
+        .task-card,
+        .task-card * {
+            cursor: default !important;
         }
 
         .drop-before {
@@ -870,6 +988,17 @@
 
         .drop-after {
             box-shadow: inset 0 -3px 0 var(--primary) !important;
+        }
+
+        .task-card.task-convert-target {
+            outline: 2px dashed var(--primary);
+            outline-offset: -5px;
+            background: var(--primary-light);
+        }
+
+        .task-card.task-convert-unavailable {
+            outline: 2px dashed var(--border);
+            outline-offset: -5px;
         }
 
         .task-text, .subtask-text {
@@ -896,7 +1025,9 @@
             border-radius: 50%;
             flex-shrink: 0;
             cursor: pointer;
-            transition: all var(--transition);
+            transition: border-color var(--motion-fast) ease,
+                        background-color var(--motion-base) ease,
+                        transform var(--motion-fast) ease;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -905,6 +1036,10 @@
 
         .task-checkbox:hover {
             border-color: var(--primary);
+        }
+
+        .task-checkbox:active {
+            transform: scale(0.88);
         }
 
         .task-card.completed .task-checkbox {
@@ -944,15 +1079,21 @@
             font-weight: 500;
             color: var(--text);
             font-family: var(--font);
-            border: 1px solid var(--primary);
-            border-radius: var(--radius-xs);
-            padding: 2px 6px;
-            background: var(--surface);
+            border: 0;
+            border-radius: 0;
+            padding: 0;
+            background: transparent;
             outline: none;
             resize: none;
             overflow: hidden;
             line-height: 1.4;
-            box-shadow: 0 0 0 2px var(--primary-glow);
+            min-height: 1.4em;
+        }
+
+        /* Mantém a edição integrada ao texto, sem herdar o contorno global de foco. */
+        textarea.task-text-input:focus-visible {
+            outline: none;
+            outline-offset: 0;
         }
 
         .task-chips {
@@ -994,14 +1135,21 @@
         .task-actions {
             display: flex;
             align-items: center;
-            gap: 2px;
+            gap: 0;
+            margin-right: -8px;
             opacity: 0;
-            transition: opacity var(--transition);
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity var(--motion-fast) ease, visibility 0s linear var(--motion-fast);
             flex-shrink: 0;
         }
 
-        .task-card:hover .task-actions {
+        .task-card:hover .task-actions,
+        .task-card:focus-within .task-actions {
             opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+            transition-delay: 0s;
         }
 
         .task-action-btn {
@@ -1015,12 +1163,31 @@
             color: var(--text-tertiary);
             border-radius: var(--radius-xs);
             cursor: pointer;
-            transition: all var(--transition);
+            transition: color var(--motion-fast) ease,
+                        background-color var(--motion-fast) ease,
+                        transform var(--motion-fast) ease;
         }
 
         .task-action-btn:hover {
             background: var(--bg-secondary);
             color: var(--text);
+        }
+
+        .task-action-btn:active,
+        .block-action-btn:active,
+        .header-btn:active,
+        .filter-chip:active,
+        .block-focus-btn:active,
+        .add-block-card:active {
+            transform: scale(0.96);
+        }
+
+        button:focus-visible,
+        a:focus-visible,
+        input:focus-visible,
+        textarea:focus-visible {
+            outline: 2px solid var(--primary);
+            outline-offset: 2px;
         }
 
         .task-action-btn.danger:hover {
@@ -1029,8 +1196,40 @@
         }
 
         .task-action-btn svg {
-            width: 12px;
-            height: 12px;
+            width: 15px;
+            height: 15px;
+        }
+
+        .task-important-btn {
+            width: 24px;
+            height: 24px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            border: none;
+            border-radius: var(--radius-xs);
+            background: transparent;
+            color: var(--text-tertiary);
+            transition: color var(--motion-fast) ease, background-color var(--motion-fast) ease;
+        }
+
+        .task-important-btn:hover {
+            background: var(--bg-secondary);
+            color: var(--block-important);
+        }
+
+        .task-important-btn[aria-pressed="true"] {
+            color: var(--block-important);
+        }
+
+        .task-important-btn[aria-pressed="true"] svg {
+            fill: currentColor;
+        }
+
+        .task-important-btn svg {
+            width: 15px;
+            height: 15px;
         }
 
         /* ========== DAY PICKER DROPDOWN ========== */
@@ -1086,11 +1285,40 @@
             background: var(--bg-secondary);
         }
 
+        .day-picker-item[aria-pressed="true"] {
+            background: var(--primary-light);
+        }
+
         .day-picker-item .picker-dot {
             width: 8px;
             height: 8px;
             border-radius: 50%;
             flex-shrink: 0;
+        }
+
+        .day-picker-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 6px;
+            padding: 8px 4px 2px;
+            border-top: 1px solid var(--border-light);
+            margin-top: 6px;
+        }
+
+        .day-picker-action {
+            border: 1px solid var(--border);
+            border-radius: var(--radius-xs);
+            padding: 5px 9px;
+            background: transparent;
+            color: var(--text-secondary);
+            font: 600 11px var(--font);
+            cursor: pointer;
+        }
+
+        .day-picker-action.confirm {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
         }
 
         /* ========== CONFIRMATION MODAL ========== */
@@ -1594,6 +1822,32 @@
             color: var(--text);
         }
 
+        .side-panel-controls {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .side-panel-mode {
+            border: 1px solid var(--border);
+            border-radius: var(--radius-xs);
+            padding: 5px 8px;
+            background: transparent;
+            color: var(--text-secondary);
+            font: 600 11px var(--font);
+            cursor: pointer;
+            transition: background-color var(--motion-fast) ease,
+                        color var(--motion-fast) ease,
+                        border-color var(--motion-fast) ease;
+        }
+
+        .side-panel-mode:hover,
+        .side-panel-mode[aria-pressed="true"] {
+            background: var(--primary-light);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
         .side-panel-body {
             flex: 1;
             overflow-y: auto;
@@ -1630,6 +1884,31 @@
             padding: 8px 0;
             border-bottom: 1px solid var(--border-light);
             transition: all 0.2s;
+        }
+
+        .subtask-item.subtask-dragging {
+            opacity: 0.45;
+        }
+
+        .subtask-drag-handle {
+            width: 14px;
+            min-height: 18px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-tertiary);
+            cursor: grab;
+            flex-shrink: 0;
+            touch-action: none;
+        }
+
+        .subtask-drag-handle:active {
+            cursor: grabbing;
+        }
+
+        .subtask-drag-handle svg {
+            width: 14px;
+            height: 14px;
         }
 
         .subtask-item:last-child {
@@ -1757,6 +2036,32 @@
             height: 12px;
         }
 
+        @media (hover: none) {
+            .task-actions,
+            .subtask-delete {
+                opacity: 1;
+                visibility: visible;
+                pointer-events: auto;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            html {
+                scroll-behavior: auto;
+            }
+
+            .task-card,
+            .block-card,
+            .task-card.task-entering,
+            .block-card.block-entering,
+            .side-panel,
+            .modal-overlay,
+            .day-picker {
+                animation: none !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
         /* Responsive */
         @media (max-width: 900px) {
             .main {
@@ -1825,18 +2130,25 @@
     <!-- FILTER BAR -->
     <div class="filter-bar" id="filter-bar">
         <span class="filter-label">Filtrar:</span>
-        <button class="filter-chip active" data-filter="all">Todos</button>
-        <button class="filter-chip" data-filter="atrasadas"><span class="chip-dot" style="background:var(--block-urgent)"></span>Atrasadas</button>
-        <button class="filter-chip" data-filter="hoje"><span class="chip-dot" style="background:var(--day-hoje)"></span>Hoje</button>
-        <button class="filter-chip" data-filter="amanha"><span class="chip-dot" style="background:var(--day-ter)"></span>Amanhã</button>
-        <button class="filter-chip" data-filter="segunda"><span class="chip-dot" style="background:var(--day-seg)"></span>Seg</button>
-        <button class="filter-chip" data-filter="terca"><span class="chip-dot" style="background:var(--day-ter)"></span>Ter</button>
-        <button class="filter-chip" data-filter="quarta"><span class="chip-dot" style="background:var(--day-qua)"></span>Qua</button>
-        <button class="filter-chip" data-filter="quinta"><span class="chip-dot" style="background:var(--day-qui)"></span>Qui</button>
-        <button class="filter-chip" data-filter="sexta"><span class="chip-dot" style="background:var(--day-sex)"></span>Sex</button>
-        <button class="filter-chip" data-filter="sabado"><span class="chip-dot" style="background:var(--day-sab)"></span>Sáb</button>
-        <button class="filter-chip" data-filter="domingo"><span class="chip-dot" style="background:var(--day-dom)"></span>Dom</button>
-        <button class="filter-chip" data-filter="futuras"><span class="chip-dot" style="background:var(--text-tertiary)"></span>Futuras</button>
+        <button class="filter-chip organize-filters-btn" id="btn-organize-filters" type="button" title="Organizar filtros" aria-label="Organizar filtros"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg></button>
+        <button class="filter-chip filter-orderable active" data-filter="all" data-order-id="all">Todos</button>
+        <button class="filter-chip filter-orderable" data-filter="important" data-order-id="important" title="Tarefas importantes"><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.1 8.3 22 9.3 17 14.2 18.2 21.1 12 17.8 5.8 21.1 7 14.2 2 9.3 8.9 8.3 12 2"></polygon></svg>Importantes</button>
+        <button class="filter-chip filter-orderable" data-filter="atrasadas" data-order-id="atrasadas"><span class="chip-dot" style="background:var(--block-urgent)"></span>Atrasadas</button>
+        <button class="filter-chip filter-orderable" data-filter="hoje" data-order-id="hoje"><span class="chip-dot" style="background:var(--day-hoje)"></span>Hoje</button>
+        <button class="filter-chip filter-orderable" data-filter="amanha" data-order-id="amanha"><span class="chip-dot" style="background:var(--day-ter)"></span>Amanhã</button>
+        <div class="weekday-filter filter-orderable" id="weekday-filter" data-order-id="weekdays">
+            <button class="filter-chip weekday-filter-toggle" id="weekday-filter-toggle" type="button" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"></rect><line x1="8" y1="2" x2="8" y2="6"></line><line x1="16" y1="2" x2="16" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg><span id="weekday-filter-label">Dias da semana</span></button>
+            <div class="weekday-filter-menu" id="weekday-filter-menu" role="menu" aria-label="Filtrar por dia da semana">
+                <button class="filter-chip filter-orderable" data-filter="segunda" data-order-id="segunda" role="menuitem"><span class="chip-dot" style="background:var(--day-seg)"></span>Segunda</button>
+                <button class="filter-chip filter-orderable" data-filter="terca" data-order-id="terca" role="menuitem"><span class="chip-dot" style="background:var(--day-ter)"></span>Terça</button>
+                <button class="filter-chip filter-orderable" data-filter="quarta" data-order-id="quarta" role="menuitem"><span class="chip-dot" style="background:var(--day-qua)"></span>Quarta</button>
+                <button class="filter-chip filter-orderable" data-filter="quinta" data-order-id="quinta" role="menuitem"><span class="chip-dot" style="background:var(--day-qui)"></span>Quinta</button>
+                <button class="filter-chip filter-orderable" data-filter="sexta" data-order-id="sexta" role="menuitem"><span class="chip-dot" style="background:var(--day-sex)"></span>Sexta</button>
+                <button class="filter-chip filter-orderable" data-filter="sabado" data-order-id="sabado" role="menuitem"><span class="chip-dot" style="background:var(--day-sab)"></span>Sábado</button>
+                <button class="filter-chip filter-orderable" data-filter="domingo" data-order-id="domingo" role="menuitem"><span class="chip-dot" style="background:var(--day-dom)"></span>Domingo</button>
+            </div>
+        </div>
+        <button class="filter-chip filter-orderable" data-filter="futuras" data-order-id="futuras"><span class="chip-dot" style="background:var(--text-tertiary)"></span>Futuras</button>
 
         <div class="search-container">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
@@ -1869,13 +2181,13 @@
                     </button>
                 </div>
                 <div class="inbox-tools-row">
-                    <button class="inbox-tool-btn" id="btn-import-pdf" type="button" title="Importar tarefas de PDF exportado do Microsoft To Do">
+                    <button class="inbox-tool-btn" id="btn-import-pdf" type="button" title="Importar lista em PDF">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
-                        <span>Importar PDF do To Do</span>
+                        <span>Importar PDF</span>
                     </button>
                     <input type="file" id="pdf-file-input" accept="application/pdf" style="display: none;">
                 </div>
-                <p class="inbox-paste-hint">Dica: cole múltiplas linhas ou arraste um PDF do Microsoft To Do aqui</p>
+                <p class="inbox-paste-hint">Dica: cole múltiplas linhas ou arraste um PDF aqui</p>
             </div>
             <div class="inbox-tasks" id="inbox-tasks">
                 <!-- Tasks rendered by JS -->
@@ -1966,9 +2278,12 @@
     <div class="side-panel" id="side-panel">
         <div class="side-panel-header">
             <div class="side-panel-title" id="side-panel-title">Título da Tarefa</div>
-            <button class="side-panel-close" id="side-panel-close" title="Fechar">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-            </button>
+            <div class="side-panel-controls">
+                <button class="side-panel-mode" id="side-panel-mode" type="button" aria-pressed="false" title="Alternar modo foco">Foco</button>
+                <button class="side-panel-close" id="side-panel-close" title="Fechar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
         </div>
         <div class="side-panel-body">
             <div class="subtasks-section">
@@ -2031,7 +2346,18 @@
             blocks: [],
             activeFilter: 'all',
             searchQuery: '',
+            filterOrder: [],
+            weekdayOrder: [],
         };
+
+        const DEFAULT_FILTER_ORDER = ['all', 'important', 'atrasadas', 'hoje', 'amanha', 'weekdays', 'futuras'];
+        const DEFAULT_WEEKDAY_ORDER = ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'];
+
+        function normalizeFilterOrders(source) {
+            const normalize = (value, defaults) => [...new Set([...(Array.isArray(value) ? value : []), ...defaults].filter(id => defaults.includes(id)))];
+            state.filterOrder = normalize(source?.filterOrder, DEFAULT_FILTER_ORDER);
+            state.weekdayOrder = normalize(source?.weekdayOrder, DEFAULT_WEEKDAY_ORDER);
+        }
 
         let dragData = null; // { taskId, sourceType: 'inbox'|'block', sourceBlockId? }
         let pendingDrop = null;
@@ -2042,14 +2368,80 @@
             if (indicator) indicator.classList.add(after ? 'drop-after' : 'drop-before');
         }
 
+        function prefersReducedMotion() {
+            return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        }
+
+        function captureLayout(selector) {
+            const positions = new Map();
+            if (prefersReducedMotion()) return positions;
+            document.querySelectorAll(selector).forEach(element => {
+                positions.set(element, element.getBoundingClientRect());
+            });
+            return positions;
+        }
+
+        function animateLayoutFrom(positions) {
+            if (positions.size === 0) return;
+            requestAnimationFrame(() => {
+                positions.forEach((before, element) => {
+                    if (!element.isConnected || typeof element.animate !== 'function') return;
+                    const after = element.getBoundingClientRect();
+                    const deltaX = before.left - after.left;
+                    const deltaY = before.top - after.top;
+                    if (Math.abs(deltaX) < 1 && Math.abs(deltaY) < 1) return;
+                    element.animate(
+                        [
+                            { transform: `translate(${deltaX}px, ${deltaY}px)` },
+                            { transform: 'translate(0, 0)' }
+                        ],
+                        { duration: 180, easing: 'cubic-bezier(0.2, 0, 0, 1)' }
+                    );
+                });
+            });
+        }
+
         function commitDrop(e) {
             if (!dragData || !pendingDrop) return;
             e.preventDefault();
             e.stopPropagation();
+            const positions = captureLayout(dragData.blockId ? '.block-card' : '.task-card:not(.hidden-by-filter)');
             const dragging = document.querySelector(dragData.blockId ? '.dragging-block' : '.dragging');
             const { container, before } = pendingDrop;
             if (dragging && before !== dragging) container.insertBefore(dragging, before || null);
             clearAllDragOver();
+            animateLayoutFrom(positions);
+        }
+
+        function clearTaskConversionTargets() {
+            document.querySelectorAll('.task-convert-target, .task-convert-unavailable')
+                .forEach(card => card.classList.remove('task-convert-target', 'task-convert-unavailable'));
+        }
+
+        function canConvertTaskToSubtask(sourceTask, targetTask) {
+            return sourceTask && targetTask && sourceTask.id !== targetTask.id && (!sourceTask.subtasks || sourceTask.subtasks.length === 0);
+        }
+
+        function convertTaskToSubtask(sourceTaskId, targetTask) {
+            const sourceLocation = findTaskLocation(sourceTaskId);
+            const sourceTask = getTaskById(sourceTaskId);
+            if (!canConvertTaskToSubtask(sourceTask, targetTask)) return false;
+
+            if (!targetTask.subtasks) targetTask.subtasks = [];
+            targetTask.subtasks.push({
+                id: sourceTask.id,
+                text: sourceTask.text,
+                completed: sourceTask.completed
+            });
+            removeTaskFromSource(sourceTask.id);
+            saveState();
+            refreshTaskContainerState(sourceLocation);
+            refreshTaskCard(targetTask);
+
+            const removedFields = ['a data'];
+            if (sourceTask.important) removedFields.push('a importância');
+            showToast(`Tarefa convertida em subtarefa. Foi removida ${removedFields.join(' e ')}.`);
+            return true;
         }
 
         // ===========================
@@ -2064,9 +2456,23 @@
                 id: genId(),
                 text: text.trim(),
                 completed: false,
+                important: false,
                 days: [],
                 subtasks: [],
             };
+        }
+
+        function normalizeTaskImportance(task) {
+            if (!task || typeof task !== 'object' || typeof task.important === 'boolean') return false;
+            task.important = false;
+            return true;
+        }
+
+        function normalizeOrganizerTaskImportance() {
+            let changed = false;
+            state.inbox.forEach(task => { changed = normalizeTaskImportance(task) || changed; });
+            state.blocks.forEach(block => (block.tasks || []).forEach(task => { changed = normalizeTaskImportance(task) || changed; }));
+            return changed;
         }
 
         function getDragAfterElement(container, y) {
@@ -2123,7 +2529,8 @@
             }
 
             saveState();
-            renderAll();
+            refreshTaskContainersState();
+            refreshTaskVisibility();
         }
 
         // ===========================
@@ -2154,11 +2561,28 @@
                 try {
                     const cloudState = await window.FocusCloud.loadOrganizerState();
                     if (cloudState && Array.isArray(cloudState.blocks)) {
+                        const localHasContent = Boolean(localState && (
+                            (localState.inbox || []).length > 0 ||
+                            (localState.blocks || []).some(block => (block.tasks || []).length > 0)
+                        ));
+                        const cloudHasContent = (cloudState.inbox || []).length > 0 ||
+                            (cloudState.blocks || []).some(block => (block.tasks || []).length > 0);
+                        if (!cloudHasContent && localHasContent) {
+                            state.inbox = localState.inbox || [];
+                            state.blocks = localState.blocks || [];
+                            state.activeFilter = localState.activeFilter || 'all';
+                            state.searchQuery = localState.searchQuery || '';
+                            window.FocusCloud?.showStatus('A cópia local foi preservada; a nuvem estava vazia', 'warning');
+                            return true;
+                        }
                         state.inbox = cloudState.inbox || [];
                         state.blocks = cloudState.blocks || [];
                         state.activeFilter = cloudState.activeFilter || 'all';
                         state.searchQuery = cloudState.searchQuery || '';
+                        normalizeFilterOrders(cloudState);
+                        const normalized = normalizeOrganizerTaskImportance();
                         localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+                        if (normalized) window.FocusCloud?.scheduleOrganizerSave(state);
                         return true;
                     }
                 } catch (e) {
@@ -2172,6 +2596,8 @@
                 state.blocks = localState.blocks || [];
                 state.activeFilter = localState.activeFilter || 'all';
                 state.searchQuery = localState.searchQuery || '';
+                normalizeFilterOrders(localState);
+                normalizeOrganizerTaskImportance();
                 window.FocusCloud?.scheduleOrganizerSave(state);
                 return true;
             }
@@ -2242,38 +2668,45 @@
         // ===========================
         // RENDER: TASK CARD
         // ===========================
-        function renderTaskCard(task) {
+        function taskMatchesCurrentView(task) {
+            if (state.activeFilter !== 'all') {
+                if (state.activeFilter === 'atrasadas') {
+                    const todayStr = new Date().toISOString().split('T')[0];
+                    const hasPastDate = task.days.some(d => /^\d{4}-\d{2}-\d{2}$/.test(d) && d < todayStr);
+                    if (!hasPastDate) return false;
+                } else if (state.activeFilter === 'futuras') {
+                    const todayStr = new Date().toISOString().split('T')[0];
+                    const hasFutureDate = task.days.some(d => /^\d{4}-\d{2}-\d{2}$/.test(d) && d > todayStr);
+                    if (!hasFutureDate) return false;
+                } else if (state.activeFilter === 'important') {
+                    if (!task.important) return false;
+                } else if (!task.days.includes(state.activeFilter)) {
+                    return false;
+                }
+            }
+
+            if (state.searchQuery) {
+                const q = state.searchQuery.toLowerCase();
+                const matchTask = task.text.toLowerCase().includes(q);
+                const matchSubtask = task.subtasks && task.subtasks.some(subtask => subtask.text.toLowerCase().includes(q));
+                if (!matchTask && !matchSubtask) return false;
+            }
+
+            return true;
+        }
+
+        function renderTaskCard(task, options = {}) {
             const card = document.createElement('div');
             card.className = 'task-card' + (task.completed ? ' completed' : '');
             card.setAttribute('draggable', 'true');
             card.dataset.taskId = task.id;
 
-            // Apply filter visibility
-            if (state.activeFilter !== 'all') {
-                if (state.activeFilter === 'atrasadas') {
-                    const todayStr = new Date().toISOString().split('T')[0];
-                    const hasPastDate = task.days.some(d => d.match(/^\d{4}-\d{2}-\d{2}$/) && d < todayStr);
-                    if (!hasPastDate) card.classList.add('hidden-by-filter');
-                } else if (state.activeFilter === 'futuras') {
-                    const todayStr = new Date().toISOString().split('T')[0];
-                    const hasFutureDate = task.days.some(d => d.match(/^\d{4}-\d{2}-\d{2}$/) && d > todayStr);
-                    if (!hasFutureDate) card.classList.add('hidden-by-filter');
-                } else {
-                    if (!task.days.includes(state.activeFilter)) {
-                        card.classList.add('hidden-by-filter');
-                    }
-                }
+            if (options.animateEntry && !prefersReducedMotion()) {
+                card.classList.add('task-entering');
+                card.addEventListener('animationend', () => card.classList.remove('task-entering'), { once: true });
             }
 
-            // Apply search visibility
-            if (state.searchQuery) {
-                const q = state.searchQuery.toLowerCase();
-                const matchTask = task.text.toLowerCase().includes(q);
-                const matchSub = task.subtasks && task.subtasks.some(s => s.text.toLowerCase().includes(q));
-                if (!matchTask && !matchSub) {
-                    card.classList.add('hidden-by-filter');
-                }
-            }
+            card.classList.toggle('hidden-by-filter', !taskMatchesCurrentView(task));
 
             // Checkbox
             const checkbox = document.createElement('div');
@@ -2283,7 +2716,7 @@
                 e.stopPropagation();
                 task.completed = !task.completed;
                 saveState();
-                renderAll();
+                card.classList.toggle('completed', task.completed);
             });
 
             // Content
@@ -2324,7 +2757,7 @@
                         e.stopPropagation();
                         task.days = task.days.filter(d => d !== dayKey);
                         saveState();
-                        renderAll();
+                        refreshTaskCard(task);
                     });
                     chipsEl.appendChild(chip);
                 });
@@ -2344,6 +2777,23 @@
             // Actions
             const actions = document.createElement('div');
             actions.className = 'task-actions';
+
+            const importantBtn = document.createElement('button');
+            importantBtn.type = 'button';
+            importantBtn.className = 'task-important-btn';
+            importantBtn.title = 'Marcar como importante';
+            importantBtn.setAttribute('aria-label', 'Marcar como importante');
+            importantBtn.setAttribute('aria-pressed', String(task.important));
+            importantBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.1 8.3 22 9.3 17 14.2 18.2 21.1 12 17.8 5.8 21.1 7 14.2 2 9.3 8.9 8.3 12 2"></polygon></svg>';
+            importantBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                task.important = !task.important;
+                importantBtn.setAttribute('aria-pressed', String(task.important));
+                importantBtn.title = task.important ? 'Remover importância' : 'Marcar como importante';
+                importantBtn.setAttribute('aria-label', importantBtn.title);
+                saveState();
+                refreshTaskVisibility();
+            });
 
             // Details button
             const detailsBtn = document.createElement('button');
@@ -2365,16 +2815,6 @@
                 toggleDayPicker(task, card);
             });
 
-            // Edit button
-            const editBtn = document.createElement('button');
-            editBtn.className = 'task-action-btn';
-            editBtn.title = 'Editar';
-            editBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>';
-            editBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                startEditTask(task, textEl, card);
-            });
-
             // Delete button
             const delBtn = document.createElement('button');
             delBtn.className = 'task-action-btn danger';
@@ -2387,12 +2827,12 @@
 
             actions.appendChild(detailsBtn);
             actions.appendChild(dayBtn);
-            actions.appendChild(editBtn);
             actions.appendChild(delBtn);
 
             card.appendChild(checkbox);
             card.appendChild(content);
             card.appendChild(actions);
+            card.appendChild(importantBtn);
 
             // Drag events
             card.addEventListener('dragstart', (e) => {
@@ -2410,19 +2850,43 @@
                 };
                 e.dataTransfer.effectAllowed = 'move';
                 e.dataTransfer.setData('text/plain', task.id);
-                // Delay to let browser capture drag image
-                requestAnimationFrame(() => {
-                    card.style.opacity = '0.4';
-                });
             });
 
             card.addEventListener('dragend', (e) => {
                 e.stopPropagation();
+                const converted = dragData?.converted;
                 card.classList.remove('dragging');
-                card.style.opacity = '';
                 dragData = null;
                 clearAllDragOver();
-                rebuildStateFromDOM();
+                clearTaskConversionTargets();
+                if (!converted) rebuildStateFromDOM();
+            });
+
+            card.addEventListener('dragover', (e) => {
+                if (!dragData?.taskId) return;
+                const sourceTask = getTaskById(dragData.taskId);
+                const box = card.getBoundingClientRect();
+                const pointerInCenter = e.clientY > box.top + box.height * 0.25 && e.clientY < box.bottom - box.height * 0.25;
+                if (!pointerInCenter) return;
+                e.preventDefault();
+                e.stopPropagation();
+                clearAllDragOver();
+                clearTaskConversionTargets();
+                card.classList.add(canConvertTaskToSubtask(sourceTask, task) ? 'task-convert-target' : 'task-convert-unavailable');
+                e.dataTransfer.dropEffect = 'move';
+            });
+
+            card.addEventListener('dragleave', (e) => {
+                if (!card.contains(e.relatedTarget)) card.classList.remove('task-convert-target');
+            });
+
+            card.addEventListener('drop', (e) => {
+                if (!dragData?.taskId || (!card.classList.contains('task-convert-target') && !card.classList.contains('task-convert-unavailable'))) return;
+                e.preventDefault();
+                e.stopPropagation();
+                const converted = card.classList.contains('task-convert-target') && convertTaskToSubtask(dragData.taskId, task);
+                if (converted) dragData.converted = true;
+                clearTaskConversionTargets();
             });
 
             return card;
@@ -2431,6 +2895,7 @@
         function startEditTask(task, textEl, card) {
             const input = document.createElement('textarea');
             input.className = 'task-text-input';
+            input.setAttribute('aria-label', 'Editar tarefa');
             input.value = task.text;
             input.rows = 1;
             
@@ -2442,16 +2907,16 @@
 
             textEl.replaceWith(input);
             input.focus();
-            input.setSelectionRange(input.value.length, input.value.length);
+            input.setSelectionRange(0, input.value.length);
             adjustHeight();
 
             const finish = () => {
                 const val = input.value.trim();
-                if (val) {
+                if (val && val !== task.text) {
                     task.text = val;
                     saveState();
                 }
-                renderAll();
+                refreshTaskCard(task);
             };
 
             input.addEventListener('blur', finish);
@@ -2487,94 +2952,108 @@
             return `${y}-${m}-${dateStr}`;
         }
 
+        function getCategoryForDate(dateString) {
+            if (!dateString) return null;
+            const [year, month, day] = dateString.split('-').map(Number);
+            const selectedDate = new Date(year, month - 1, day);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const diffDays = Math.round((selectedDate.getTime() - today.getTime()) / 86400000);
+            if (diffDays === 0) return 'hoje';
+            if (diffDays === 1) return 'amanha';
+            return ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'][selectedDate.getDay()];
+        }
+
         function toggleDayPicker(task, card) {
-            // Close any existing picker
             document.querySelectorAll('.day-picker.open').forEach(p => p.remove());
 
             const picker = document.createElement('div');
             picker.className = 'day-picker open';
+            let draftDays = [...task.days];
+            let dateInput;
 
-            Object.entries(DAY_CONFIG).forEach(([key, cfg]) => {
-                const item = document.createElement('button');
-                item.className = 'day-picker-item';
-                const isActive = task.days.includes(key);
-                item.innerHTML = `<span class="picker-dot" style="background:${isActive ? cfg.color : 'var(--border)'}"></span>${cfg.label}${isActive ? ' ✓' : ''}`;
-                item.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    const exactDate = getDateForKey(key);
-                    if (task.days.includes(key)) {
-                        task.days = task.days.filter(d => d !== key);
-                        if (exactDate) task.days = task.days.filter(d => d !== exactDate);
-                    } else {
-                        task.days.push(key);
-                        task.days = task.days.filter(d => !d.match(/^\d{4}-\d{2}-\d{2}$/)); // clear old exact dates
-                        if (exactDate) task.days.push(exactDate); // push the new exact date
-                    }
-                    saveState();
-                    picker.remove();
-                    renderAll();
+            const setDraftDate = (key, exactDate) => {
+                const isCurrentSelection = draftDays.includes(key) && draftDays.includes(exactDate);
+                draftDays = isCurrentSelection ? [] : [key, exactDate];
+                if (dateInput) dateInput.value = exactDate || '';
+                renderOptions();
+            };
+
+            const renderOptions = () => {
+                picker.querySelectorAll('.day-picker-item').forEach(item => item.remove());
+                const reference = dateInput || picker.firstChild;
+                Object.entries(DAY_CONFIG).forEach(([key, cfg]) => {
+                    const item = document.createElement('button');
+                    const isActive = draftDays.includes(key);
+                    item.type = 'button';
+                    item.className = 'day-picker-item';
+                    item.setAttribute('aria-pressed', String(isActive));
+                    item.innerHTML = `<span class="picker-dot" style="background:${isActive ? cfg.color : 'var(--border)'}"></span>${cfg.label}${isActive ? ' ✓' : ''}`;
+                    item.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        setDraftDate(key, getDateForKey(key));
+                    });
+                    picker.insertBefore(item, reference);
                 });
-                picker.appendChild(item);
-            });
+            };
 
-            // Add custom date input
-            const customDateKey = task.days.find(d => d.match(/^\d{4}-\d{2}-\d{2}$/));
-            const dateInput = document.createElement('input');
+            const customDateKey = draftDays.find(d => /^\d{4}-\d{2}-\d{2}$/.test(d));
+            dateInput = document.createElement('input');
             dateInput.type = 'date';
             dateInput.className = 'day-picker-date-input';
-            if (customDateKey) dateInput.value = customDateKey;
-
+            dateInput.value = customDateKey || '';
             dateInput.addEventListener('change', (e) => {
                 e.stopPropagation();
-                // Remove existing custom dates to keep at most one specific date (optional, but cleaner)
-                task.days = task.days.filter(d => !d.match(/^\d{4}-\d{2}-\d{2}$/));
-                if (dateInput.value) {
-                    const selectedStr = dateInput.value;
-                    task.days.push(selectedStr);
-
-                    const parts = selectedStr.split('-');
-                    const d = new Date(parts[0], parts[1] - 1, parts[2]);
-                    
-                    const today = new Date();
-                    today.setHours(0,0,0,0);
-                    
-                    const diffTime = d.getTime() - today.getTime();
-                    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
-                    
-                    const daysMap = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
-                    let categoryToAdd = null;
-
-                    if (diffDays === 0) {
-                        categoryToAdd = 'hoje';
-                    } else if (diffDays === 1) {
-                        categoryToAdd = 'amanha';
-                    } else {
-                        categoryToAdd = daysMap[d.getDay()];
-                    }
-
-                    if (categoryToAdd && !task.days.includes(categoryToAdd)) {
-                        task.days.push(categoryToAdd);
-                    }
-                }
-                saveState();
-                picker.remove();
-                renderAll();
+                const category = getCategoryForDate(dateInput.value);
+                draftDays = category && dateInput.value ? [category, dateInput.value] : [];
+                renderOptions();
             });
             dateInput.addEventListener('click', (e) => e.stopPropagation());
-
             picker.appendChild(dateInput);
+
+            const actions = document.createElement('div');
+            actions.className = 'day-picker-actions';
+            const cancelButton = document.createElement('button');
+            cancelButton.type = 'button';
+            cancelButton.className = 'day-picker-action';
+            cancelButton.textContent = 'Cancelar';
+            const confirmButton = document.createElement('button');
+            confirmButton.type = 'button';
+            confirmButton.className = 'day-picker-action confirm';
+            confirmButton.textContent = 'OK';
+            actions.append(cancelButton, confirmButton);
+            picker.appendChild(actions);
+            renderOptions();
 
             card.style.position = 'relative';
             card.appendChild(picker);
 
-            // Close on click outside
+            const close = () => {
+                picker.remove();
+                document.removeEventListener('click', closeHandler, true);
+                document.removeEventListener('keydown', escapeHandler, true);
+            };
             const closeHandler = (e) => {
-                if (!picker.contains(e.target)) {
-                    picker.remove();
-                    document.removeEventListener('click', closeHandler, true);
+                if (!picker.contains(e.target)) close();
+            };
+            const escapeHandler = (e) => {
+                if (e.key === 'Escape') {
+                    e.preventDefault();
+                    close();
                 }
             };
-            setTimeout(() => document.addEventListener('click', closeHandler, true), 10);
+
+            cancelButton.addEventListener('click', close);
+            confirmButton.addEventListener('click', () => {
+                task.days = draftDays;
+                saveState();
+                close();
+                refreshTaskCard(task);
+            });
+            setTimeout(() => {
+                document.addEventListener('click', closeHandler, true);
+                document.addEventListener('keydown', escapeHandler, true);
+            }, 10);
         }
 
         function findTaskLocation(taskId) {
@@ -2606,10 +3085,30 @@
             return null;
         }
 
+        function animateRemoval(element, className, onComplete) {
+            if (!element || prefersReducedMotion()) {
+                if (element) element.remove();
+                onComplete();
+                return;
+            }
+
+            if (className === 'task-removing') {
+                element.style.height = `${element.offsetHeight}px`;
+            }
+            element.getBoundingClientRect();
+            requestAnimationFrame(() => element.classList.add(className));
+            window.setTimeout(() => {
+                element.remove();
+                onComplete();
+            }, 190);
+        }
+
         function deleteTask(taskId) {
+            const location = findTaskLocation(taskId);
             removeTaskFromSource(taskId);
             saveState();
-            renderAll();
+            const card = document.querySelector(`.task-card[data-task-id="${taskId}"]`);
+            animateRemoval(card, 'task-removing', () => refreshTaskContainerState(location));
         }
 
         // ===========================
@@ -2623,7 +3122,7 @@
             };
         }
 
-        function renderBlock(block) {
+        function renderBlock(block, options = {}) {
             const colors = getBlockCSSVars(block.colorVar);
 
             const card = document.createElement('div');
@@ -2632,6 +3131,11 @@
             card.setAttribute('draggable', 'true');
             card.style.borderTopColor = colors.dot;
             card.style.borderTopWidth = '3px';
+
+            if (options.animateEntry && !prefersReducedMotion()) {
+                card.classList.add('block-entering');
+                card.addEventListener('animationend', () => card.classList.remove('block-entering'), { once: true });
+            }
 
             card.addEventListener('dragstart', (e) => {
                 // Se o drag foi iniciado em um input ou botão, não arrastar o bloco
@@ -2643,14 +3147,10 @@
                 dragData = { blockId: block.id };
                 e.dataTransfer.effectAllowed = 'move';
                 e.dataTransfer.setData('text/plain', block.id);
-                requestAnimationFrame(() => {
-                    card.style.opacity = '0.5';
-                });
             });
 
             card.addEventListener('dragend', () => {
                 card.classList.remove('dragging-block');
-                card.style.opacity = '';
                 dragData = null;
                 clearAllDragOver();
                 rebuildStateFromDOM();
@@ -2687,7 +3187,7 @@
                         block.colorVar = colorVar;
                         saveState();
                         picker.remove();
-                        renderAll();
+                        refreshBlockAppearance(block);
                     });
                     picker.appendChild(item);
                 });
@@ -2724,30 +3224,7 @@
             const count = document.createElement('span');
             count.className = 'block-count';
             
-            const q = state.searchQuery ? state.searchQuery.toLowerCase() : '';
-            const todayStr = new Date().toISOString().split('T')[0];
-
-            const visibleTasks = block.tasks.filter(task => {
-                // Filter check
-                if (state.activeFilter !== 'all') {
-                    if (state.activeFilter === 'atrasadas') {
-                        const hasPast = task.days.some(d => d.match(/^\d{4}-\d{2}-\d{2}$/) && d < todayStr);
-                        if (!hasPast) return false;
-                    } else if (state.activeFilter === 'futuras') {
-                        const hasFuture = task.days.some(d => d.match(/^\d{4}-\d{2}-\d{2}$/) && d > todayStr);
-                        if (!hasFuture) return false;
-                    } else {
-                        if (!task.days.includes(state.activeFilter)) return false;
-                    }
-                }
-                // Search check
-                if (q) {
-                    const matchTask = task.text.toLowerCase().includes(q);
-                    const matchSub = task.subtasks && task.subtasks.some(s => s.text.toLowerCase().includes(q));
-                    if (!matchTask && !matchSub) return false;
-                }
-                return true;
-            });
+            const visibleTasks = block.tasks.filter(taskMatchesCurrentView);
             count.textContent = visibleTasks.length;
 
             const actions = document.createElement('div');
@@ -2821,11 +3298,9 @@
                     }
                     block.tasks.push(newTask);
                     saveState();
-                    renderAll();
-                    setTimeout(() => {
-                        const newCard = document.querySelector(`.block-card[data-block-id="${block.id}"] .block-quick-add input`);
-                        if (newCard) newCard.focus();
-                    }, 0);
+                    quickAddInput.value = '';
+                    refreshTaskContainerState({ type: 'block', blockId: block.id }, { animateNew: true });
+                    quickAddInput.focus();
                 }
             });
 
@@ -2849,11 +3324,9 @@
                     if (extractedDay) newTask.days.push(extractedDay);
                     block.tasks.push(newTask);
                     saveState();
-                    renderAll();
-                    setTimeout(() => {
-                        const newCard = document.querySelector(`.block-card[data-block-id="${block.id}"] .block-quick-add input`);
-                        if (newCard) newCard.focus();
-                    }, 0);
+                    quickAddInput.value = '';
+                    refreshTaskContainerState({ type: 'block', blockId: block.id }, { animateNew: true });
+                    quickAddInput.focus();
                 }
             });
 
@@ -2921,7 +3394,10 @@
 
             state.blocks = state.blocks.filter(b => b.id !== blockId);
             saveState();
-            renderAll();
+            const blockCard = document.querySelector(`.block-card[data-block-id="${blockId}"]`);
+            animateRemoval(blockCard, 'block-removing', () => {
+                refreshTaskContainerState({ type: 'inbox', blockId: null }, { animateNew: true });
+            });
         }
 
         function addBlock() {
@@ -2935,7 +3411,9 @@
             };
             state.blocks.push(block);
             saveState();
-            renderAll();
+            const blocksPanel = document.getElementById('blocks-panel');
+            const addButton = blocksPanel.querySelector('.add-block-card');
+            blocksPanel.insertBefore(renderBlock(block, { animateEntry: true }), addButton || null);
         }
 
         function focusOnBlock(block) {
@@ -2957,10 +3435,115 @@
             window.location.href = 'index.html?mode=focus';
         }
 
+        function getTasksForLocation(location) {
+            if (!location || location.type === 'unknown') return [];
+            if (location.type === 'inbox') return state.inbox;
+            const block = state.blocks.find(item => item.id === location.blockId);
+            return block ? block.tasks : [];
+        }
+
+        function getTaskContainerForLocation(location) {
+            if (!location || location.type === 'unknown') return null;
+            if (location.type === 'inbox') return document.getElementById('inbox-tasks');
+            return document.querySelector(`.block-card[data-block-id="${location.blockId}"] .block-tasks`);
+        }
+
+        function appendEmptyTaskState(container, location) {
+            if (location.type === 'inbox') {
+                const empty = document.createElement('div');
+                empty.className = 'inbox-empty';
+                empty.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg><span>Nenhuma tarefa no inbox.<br>Digite acima para adicionar.</span>';
+                container.appendChild(empty);
+                return;
+            }
+
+            const empty = document.createElement('div');
+            empty.className = 'block-empty';
+            empty.textContent = 'Arraste tarefas aqui';
+            container.appendChild(empty);
+        }
+
+        function refreshTaskContainerState(location, options = {}) {
+            const container = getTaskContainerForLocation(location);
+            if (!container) return;
+
+            const tasks = getTasksForLocation(location);
+            const desiredIds = new Set(tasks.map(task => task.id));
+            container.querySelectorAll('.block-empty, .inbox-empty').forEach(empty => empty.remove());
+            container.querySelectorAll('.task-card').forEach(card => {
+                if (!desiredIds.has(card.dataset.taskId)) card.remove();
+            });
+
+            tasks.forEach((task, index) => {
+                let card = container.querySelector(`.task-card[data-task-id="${task.id}"]`);
+                if (!card) card = renderTaskCard(task, { animateEntry: options.animateNew });
+                const cards = container.querySelectorAll('.task-card');
+                const cardAtIndex = cards[index];
+                if (cardAtIndex !== card) container.insertBefore(card, cardAtIndex || null);
+            });
+
+            if (tasks.length === 0) appendEmptyTaskState(container, location);
+            refreshTaskVisibility();
+        }
+
+        function refreshTaskContainersState() {
+            refreshTaskContainerState({ type: 'inbox', blockId: null });
+            state.blocks.forEach(block => {
+                refreshTaskContainerState({ type: 'block', blockId: block.id });
+            });
+        }
+
+        function refreshTaskCard(task) {
+            const currentCard = document.querySelector(`.task-card[data-task-id="${task.id}"]`);
+            if (currentCard) currentCard.replaceWith(renderTaskCard(task));
+
+            if (currentEditingTask && currentEditingTask.id === task.id) {
+                document.getElementById('side-panel-title').textContent = task.text;
+            }
+
+            refreshTaskVisibility();
+        }
+
+        function refreshBlockAppearance(block) {
+            const blockCard = document.querySelector(`.block-card[data-block-id="${block.id}"]`);
+            if (!blockCard) return;
+            const colors = getBlockCSSVars(block.colorVar);
+            blockCard.style.borderTopColor = colors.dot;
+            const dot = blockCard.querySelector('.block-color-dot');
+            if (dot) dot.style.background = colors.dot;
+        }
+
+        function refreshTaskVisibility() {
+            document.querySelectorAll('.task-card').forEach(card => {
+                const task = getTaskById(card.dataset.taskId);
+                card.classList.toggle('hidden-by-filter', !task || !taskMatchesCurrentView(task));
+            });
+
+            state.blocks.forEach(block => {
+                const blockCard = document.querySelector(`.block-card[data-block-id="${block.id}"]`);
+                const count = blockCard?.querySelector('.block-actions > .block-count');
+                if (count) count.textContent = block.tasks.filter(taskMatchesCurrentView).length;
+            });
+
+            document.getElementById('inbox-count').textContent = state.inbox.length;
+            document.querySelectorAll('.filter-chip').forEach(chip => {
+                chip.classList.toggle('active', chip.dataset.filter === state.activeFilter);
+            });
+            updateWeekdayFilterLabel();
+        }
+
+        function updateWeekdayFilterLabel() {
+            const toggle = document.getElementById('weekday-filter-toggle');
+            const label = document.getElementById('weekday-filter-label');
+            if (!toggle || !label) return;
+            const labels = { segunda: 'Segunda', terca: 'Terça', quarta: 'Quarta', quinta: 'Quinta', sexta: 'Sexta', sabado: 'Sábado', domingo: 'Domingo' };
+            label.textContent = labels[state.activeFilter] ? `Dias: ${labels[state.activeFilter]}` : 'Dias da semana';
+        }
+
         // ===========================
-        // RENDER: ALL
+        // INITIAL RENDER
         // ===========================
-        function renderAll() {
+        function renderInitialView() {
             // Render blocks
             const blocksPanel = document.getElementById('blocks-panel');
             blocksPanel.innerHTML = '';
@@ -3016,6 +3599,7 @@
             document.querySelectorAll('.filter-chip').forEach(chip => {
                 chip.classList.toggle('active', chip.dataset.filter === state.activeFilter);
             });
+            updateWeekdayFilterLabel();
         }
 
         // ===========================
@@ -3024,6 +3608,7 @@
         function clearAllDragOver() {
             document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
             document.querySelectorAll('.drop-before, .drop-after').forEach(el => el.classList.remove('drop-before', 'drop-after'));
+            clearTaskConversionTargets();
             pendingDrop = null;
         }
 
@@ -3073,7 +3658,7 @@
             });
             if (lines.length > 0) {
                 saveState();
-                renderAll();
+                refreshTaskContainerState({ type: 'inbox', blockId: null }, { animateNew: true });
             }
         }
 
@@ -3113,12 +3698,56 @@
         // FILTER BAR
         // ===========================
         document.getElementById('filter-bar').addEventListener('click', (e) => {
+            const weekdayToggle = e.target.closest('#weekday-filter-toggle');
+            if (weekdayToggle) {
+                const weekdayFilter = document.getElementById('weekday-filter');
+                const isOpen = weekdayFilter.classList.toggle('open');
+                weekdayToggle.setAttribute('aria-expanded', String(isOpen));
+                return;
+            }
             const chip = e.target.closest('.filter-chip');
             if (!chip) return;
             state.activeFilter = chip.dataset.filter;
             saveState();
-            renderAll();
+            refreshTaskVisibility();
+            document.getElementById('weekday-filter').classList.remove('open');
+            document.getElementById('weekday-filter-toggle').setAttribute('aria-expanded', 'false');
         });
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('#weekday-filter')) {
+                document.getElementById('weekday-filter').classList.remove('open');
+                document.getElementById('weekday-filter-toggle').setAttribute('aria-expanded', 'false');
+            }
+        });
+
+        let organizingFilters = false;
+        let filterDragItem = null;
+        function applyFilterOrders() {
+            const bar = document.getElementById('filter-bar'); const search = bar.querySelector('.search-container');
+            state.filterOrder.forEach(id => { const item = bar.querySelector(`[data-order-id="${id}"]`); if (item) bar.insertBefore(item, search); });
+            const menu = document.getElementById('weekday-filter-menu');
+            state.weekdayOrder.forEach(id => { const item = menu.querySelector(`[data-order-id="${id}"]`); if (item) menu.appendChild(item); });
+        }
+        function saveFilterOrder(container, property) { state[property] = [...container.querySelectorAll(':scope > .filter-orderable')].map(item => item.dataset.orderId); saveState(); }
+        function enableFilterOrdering(enabled) {
+            organizingFilters = enabled; const bar = document.getElementById('filter-bar'); const menu = document.getElementById('weekday-filter-menu');
+            bar.classList.toggle('organizing-filters', enabled); menu.classList.toggle('organizing-filters', enabled);
+            document.querySelectorAll('.filter-orderable').forEach(item => item.draggable = enabled);
+            const button = document.getElementById('btn-organize-filters');
+            button.classList.toggle('active', enabled);
+            button.title = enabled ? 'Concluir organização' : 'Organizar filtros';
+            button.setAttribute('aria-label', button.title);
+        }
+        document.getElementById('btn-organize-filters').addEventListener('click', (e) => { e.stopPropagation(); enableFilterOrdering(!organizingFilters); });
+        document.addEventListener('dragstart', (e) => { if (!organizingFilters || !e.target.matches('.filter-orderable')) return; filterDragItem = e.target; e.target.classList.add('filter-dragging'); });
+        document.addEventListener('dragend', () => { filterDragItem?.classList.remove('filter-dragging'); filterDragItem = null; });
+        function bindOrderContainer(container, property) {
+            container.addEventListener('dragover', (e) => { if (!filterDragItem || filterDragItem.parentElement !== container) return; e.preventDefault(); const siblings=[...container.querySelectorAll(':scope > .filter-orderable:not(.filter-dragging)')]; const before=siblings.find(item => (container.id === 'weekday-filter-menu' ? e.clientY < item.getBoundingClientRect().top + item.offsetHeight/2 : e.clientX < item.getBoundingClientRect().left + item.offsetWidth/2)); container.insertBefore(filterDragItem, before || null); });
+            container.addEventListener('drop', (e) => { if (!filterDragItem) return; e.preventDefault(); saveFilterOrder(container, property); });
+        }
+        bindOrderContainer(document.getElementById('filter-bar'), 'filterOrder');
+        bindOrderContainer(document.getElementById('weekday-filter-menu'), 'weekdayOrder');
 
         // ===========================
         // THEME TOGGLE
@@ -3206,54 +3835,7 @@
                     const viewport = page.getViewport({ scale: 1.0 });
                     const pageHeight = viewport.height;
 
-                    const lineGroups = groupToDoPdfItems(textContent.items);
-
-                    for (const line of lineGroups) {
-                        line.items.sort((a, b) => a.x - b.x);
-
-                        let fullText = '';
-                        const minX = line.items[0].x;
-                        for (let i = 0; i < line.items.length; i++) {
-                            const cur = line.items[i];
-                            if (i === 0) {
-                                fullText = cur.str;
-                            } else {
-                                const prev = line.items[i - 1];
-                                const gap = cur.x - (prev.x + prev.width);
-                                if (gap > 2 && !fullText.endsWith(' ') && !cur.str.startsWith(' ')) {
-                                    fullText += ' ' + cur.str;
-                                } else {
-                                    fullText += cur.str;
-                                }
-                            }
-                        }
-
-                        fullText = fullText.trim();
-                        if (!fullText) continue;
-
-                        // Descartar cabeçalho do Microsoft To Do (título da lista e data do topo)
-                        const isHeader = (line.y > pageHeight * 0.88) && (
-                            /^tarefas\b/i.test(fullText) ||
-                            /\b(segunda|terça|terca|quarta|quinta|sexta|sábado|sabado|domingo)-feira\b/i.test(fullText) ||
-                            /\d{1,2}\s+de\s+[a-zç]+\s+de\s+\d{4}/i.test(fullText)
-                        );
-                        if (isHeader) continue;
-
-                        // Descartar rodapé ("Impressa com o Microsoft To Do 1/3")
-                        const isFooter = (line.y < pageHeight * 0.09) || (
-                            /Impressa com o Microsoft To Do/i.test(fullText) ||
-                            /Microsoft To Do\s+\d+\/\d+/i.test(fullText)
-                        );
-                        if (isFooter) continue;
-
-                        pagesLines.push({
-                            text: fullText,
-                            x: minX,
-                            y: line.y,
-                            page: pageNum,
-                            fontSize: line.items[0].fontSize
-                        });
-                    }
+                    pagesLines.push(...extractToDoPdfPageLines(textContent.items, pageNum, pageHeight));
                 }
 
                 parsedPdfTasks = parseToDoLines(pagesLines);
@@ -3270,128 +3852,116 @@
             }
         }
 
-        function groupToDoPdfItems(items) {
-            // To Do emits the checkbox before its text in the content stream.
-            // Its baseline is vertically centered, so sorting it with the text
-            // moves it AFTER the title (or into the middle of wrapped steps).
-            const iconFonts = new Set(items.filter(item => /[\uE000-\uF8FF]/u.test(item.str || '')).map(item => item.fontName));
-            const blocks = [{ marker: null, items: [] }];
-            for (const item of items) {
-                if (!item.str || !item.str.trim() || iconFonts.has(item.fontName)) continue;
-                const str = item.str.trim();
-                const fontSize = Math.hypot(item.transform[0], item.transform[1]);
-                const entry = { str: item.str, x: item.transform[4], y: item.transform[5], fontSize, width: item.width || 0 };
-                // Font size distinguishes exported checkbox glyphs from words
-                // such as a standalone "O" in ordinary task text.
-                if (/^[Kþ○◯O•]$/.test(str) && fontSize >= 12) {
-                    blocks.push({ marker: entry, items: [] });
-                } else {
-                    blocks[blocks.length - 1].items.push(entry);
+        function extractToDoPdfPageLines(items, page, pageHeight) {
+            // O PDF do To Do codifica os ícones em fontes próprias. Em vez de
+            // depender do caractere do ícone, usamos a indentação do texto.
+            const iconFonts = new Set(items
+                .filter(item => /[\uE000-\uF8FF]/u.test(item.str || ''))
+                .map(item => item.fontName));
+            const rows = [];
+            const subtaskMarkerYs = [];
+
+            items.forEach(item => {
+                if (!item.str || !item.str.trim() || iconFonts.has(item.fontName)) return;
+                const size = Math.hypot(item.transform[0], item.transform[1]);
+                const x = item.transform[4];
+                const y = item.transform[5];
+                // Checkboxes são símbolos curtos na margem esquerda, não texto.
+                // Os marcadores maiores pertencem às subtarefas; guardamos apenas
+                // sua posição para distinguir o início de um texto quebrado.
+                if (item.str.trim().length === 1 && x < 100 && size >= 14) {
+                    if (size >= 16) subtaskMarkerYs.push(y);
+                    return;
                 }
-            }
-            return blocks.flatMap(block => {
-                const groups = [];
-                for (const item of block.items.sort((a, b) => b.y - a.y)) {
-                    const existing = groups.find(line => Math.abs(line.y - item.y) <= 4);
-                    if (existing) existing.items.push(item);
-                    else groups.push({ y: item.y, items: [item] });
-                }
-                if (block.marker) groups.unshift({ y: block.marker.y, items: [block.marker] });
-                return groups;
+                const existing = rows.find(row => Math.abs(row.y - y) <= 3);
+                const entry = { str: item.str, x, y, width: item.width || 0, fontSize: size };
+                if (existing) existing.items.push(entry);
+                else rows.push({ y, items: [entry] });
             });
+
+            const yearMatch = items.map(item => item.str).join(' ').match(/\b(20\d{2})\b/);
+            const year = yearMatch ? Number(yearMatch[1]) : new Date().getFullYear();
+            const subtaskStartRows = new Set();
+            subtaskMarkerYs.forEach(markerY => {
+                const firstTextRow = rows
+                    .filter(row => row.y >= markerY && row.y - markerY < 20)
+                    .sort((a, b) => b.y - a.y)[0];
+                if (firstTextRow) subtaskStartRows.add(firstTextRow);
+            });
+            return rows.sort((a, b) => b.y - a.y).flatMap(row => {
+                row.items.sort((a, b) => a.x - b.x);
+                let text = '';
+                row.items.forEach((item, index) => {
+                    const previous = row.items[index - 1];
+                    const gap = previous ? item.x - (previous.x + previous.width) : 0;
+                    text += index && gap > 2 && !text.endsWith(' ') && !item.str.startsWith(' ') ? ` ${item.str}` : item.str;
+                });
+                text = text.trim();
+                if (!text) return [];
+                const isHeader = row.y > pageHeight * 0.88 && (/^tarefas\b/i.test(text) || /\d{1,2}\s+de\s+[a-zç]+\s+de\s+\d{4}/i.test(text));
+                const isFooter = row.y < pageHeight * 0.09 || /Impressa com o Microsoft To Do/i.test(text);
+                if (isHeader || isFooter) return [];
+                const startsSubtask = subtaskStartRows.has(row);
+                return [{ text, x: row.items[0].x, y: row.y, page, year, fontSize: row.items[0].fontSize, startsSubtask }];
+            });
+        }
+
+        function detectedToDoDays(text, year) {
+            const months = { jan: 0, fev: 1, mar: 2, abr: 3, mai: 4, jun: 5, jul: 6, ago: 7, set: 8, out: 9, nov: 10, dez: 11 };
+            const match = text.toLowerCase().match(/\b(\d{1,2})\s+de\s+(jan|fev|mar|abr|mai|jun|jul|ago|set|out|nov|dez)[a-z]*/i);
+            if (match) {
+                const month = months[match[2].slice(0, 3).toLowerCase()];
+                const date = new Date(Date.UTC(year, month, Number(match[1])));
+                if (date.getUTCMonth() === month && date.getUTCDate() === Number(match[1])) return [date.toISOString().slice(0, 10)];
+            }
+            const day = extractDayFromText(text);
+            return day ? [day] : [];
         }
 
         function parseToDoLines(lines) {
             const tasks = [];
             let currentTask = null;
-            let lastItem = null;
-            let nextLineForceMainTask = false;
-            let nextLineForceSubtask = false;
+            let currentSubtask = null;
+            let lastContent = null;
 
-            const isMetadata = (text) => {
-                if (/^(\d+\s+de\s+\d+|Meu Dia|Hoje|Amanhã|Amanha|Ontem)/i.test(text)) return true;
-                if (/\b(0|\d+)\s+de\s+\d+\b/i.test(text)) return true;
-                if (/\bMeu Dia\b/i.test(text)) return true;
-                if (/^(\w{3},\s*\d+\s+de\s+\w{3})$/i.test(text)) return true;
-                if (/^(Hoje|Amanhã|Amanha)$/i.test(text)) return true;
-                return false;
-            };
+            const isContinuation = (kind, line) => lastContent && lastContent.kind === kind &&
+                lastContent.page === line.page && lastContent.y - line.y < 19;
+            const append = (item, text) => { item.text = `${item.text} ${text}`.replace(/\s+/g, ' ').trim(); };
 
-            for (let i = 0; i < lines.length; i++) {
-                const line = lines[i];
-                let text = line.text.trim();
+            for (const line of lines) {
+                const text = line.text.trim();
+                const isMainText = line.x <= 105 && line.fontSize >= 10;
+                const isSubtaskText = line.x > 105 && line.fontSize >= 9.4;
 
-                // Standalone markers
-                if (/^[K○◯O]$/i.test(text)) {
-                    nextLineForceMainTask = true;
-                    continue;
-                }
-
-                if (/^[þ•\-\*]$/i.test(text)) {
-                    nextLineForceSubtask = true;
-                    continue;
-                }
-
-                // Metadata
-                if (isMetadata(text)) {
-                    const day = extractDayFromText(text);
-                    if (day && currentTask && !currentTask.days.includes(day)) {
-                        currentTask.days.push(day);
-                    }
-                    continue;
-                }
-
-                const cleaned = text.replace(/^[þK○◯O•\-\*]\s+/i, '').trim();
-                if (!cleaned) continue;
-
-                const hasSubMarker = /^[þ•\-\*]\s+/i.test(text);
-                const hasMainMarker = /^[K○◯O]\s+/i.test(text);
-
-                if (nextLineForceMainTask || hasMainMarker) {
-                    currentTask = {
-                        id: genId(),
-                        text: cleaned,
-                        completed: false,
-                        days: [],
-                        subtasks: []
-                    };
-                    tasks.push(currentTask);
-                    lastItem = currentTask;
-                    nextLineForceMainTask = false;
-                    nextLineForceSubtask = false;
-                } 
-                else if (nextLineForceSubtask || hasSubMarker) {
-                    if (currentTask) {
-                        const subtask = {
-                            id: genId(),
-                            text: cleaned,
-                            days: [...currentTask.days],
-                            completed: false
-                        };
-                        currentTask.subtasks.push(subtask);
-                        lastItem = subtask;
-                    }
-                    nextLineForceSubtask = false;
-                } 
-                else {
-                    // Continuation of the last item
-                    if (lastItem) {
-                        lastItem.text += ' ' + cleaned;
+                if (isMainText) {
+                    if (currentTask && isContinuation('main', line)) {
+                        append(currentTask, text);
                     } else {
-                        // Fallback
-                        currentTask = {
-                            id: genId(),
-                            text: cleaned,
-                            completed: false,
-                            days: [],
-                            subtasks: []
-                        };
+                        currentTask = { id: genId(), text, completed: false, important: false, days: [], subtasks: [] };
                         tasks.push(currentTask);
-                        lastItem = currentTask;
+                        currentSubtask = null;
                     }
+                    lastContent = { kind: 'main', page: line.page, y: line.y };
+                    continue;
+                }
+
+                if (isSubtaskText && currentTask) {
+                    if (currentSubtask && isContinuation('subtask', line) && !line.startsSubtask) {
+                        append(currentSubtask, text);
+                    } else {
+                        currentSubtask = { id: genId(), text, completed: false, days: [] };
+                        currentTask.subtasks.push(currentSubtask);
+                    }
+                    lastContent = { kind: 'subtask', page: line.page, y: line.y };
+                    continue;
+                }
+
+                if (currentTask) {
+                    detectedToDoDays(text, line.year).forEach(day => {
+                        if (!currentTask.days.includes(day)) currentTask.days.push(day);
+                    });
                 }
             }
-
             return tasks;
         }
 
@@ -3628,7 +4198,7 @@
             });
 
             saveState();
-            renderAll();
+            refreshTaskContainerState({ type: 'inbox', blockId: null }, { animateNew: true });
             closePdfImportModal();
             showToast(`✓ ${importedCount} tarefas importadas com sucesso para o Inbox!`);
         });
@@ -3676,28 +4246,42 @@
         // SIDE PANEL (TASK DETAILS)
         // ===========================
         let currentEditingTask = null;
+        let sidePanelMode = 'comparison';
+        let subtaskDragState = null;
         const sidePanel = document.getElementById('side-panel');
         const sidePanelOverlay = document.getElementById('side-panel-overlay');
+        const sidePanelModeButton = document.getElementById('side-panel-mode');
         const subtaskListEl = document.getElementById('subtask-list');
         const subtaskInputEl = document.getElementById('subtask-input');
+
+        function setSidePanelMode(mode) {
+            sidePanelMode = mode;
+            const isFocusMode = mode === 'focus';
+            sidePanel.classList.toggle('focus-mode', isFocusMode);
+            sidePanelOverlay.classList.toggle('active', isFocusMode);
+            sidePanelModeButton.setAttribute('aria-pressed', String(isFocusMode));
+            sidePanelModeButton.textContent = isFocusMode ? 'Comparar' : 'Foco';
+            sidePanelModeButton.title = isFocusMode ? 'Voltar ao modo comparação' : 'Ativar modo foco';
+        }
 
         function openSidePanel(task) {
             currentEditingTask = task;
             document.getElementById('side-panel-title').textContent = task.text;
             renderSubtasks();
             sidePanel.classList.add('active');
-            sidePanelOverlay.classList.add('active');
         }
 
         function closeSidePanel() {
             sidePanel.classList.remove('active');
-            sidePanelOverlay.classList.remove('active');
+            setSidePanelMode('comparison');
             currentEditingTask = null;
-            renderAll();
         }
 
         document.getElementById('side-panel-close').addEventListener('click', closeSidePanel);
-        sidePanelOverlay.addEventListener('click', closeSidePanel);
+        sidePanelModeButton.addEventListener('click', () => {
+            setSidePanelMode(sidePanelMode === 'focus' ? 'comparison' : 'focus');
+        });
+        sidePanelOverlay.addEventListener('click', (e) => e.preventDefault());
 
         function renderSubtasks() {
             if (!currentEditingTask) return;
@@ -3707,6 +4291,23 @@
             subtasks.forEach((subtask, index) => {
                 const item = document.createElement('div');
                 item.className = 'subtask-item' + (subtask.completed ? ' completed' : '');
+                item.dataset.subtaskId = subtask.id;
+
+                const dragHandle = document.createElement('span');
+                dragHandle.className = 'subtask-drag-handle';
+                dragHandle.setAttribute('draggable', 'true');
+                dragHandle.title = 'Arrastar para reordenar';
+                dragHandle.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="6" r="1"></circle><circle cx="15" cy="6" r="1"></circle><circle cx="9" cy="12" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="9" cy="18" r="1"></circle><circle cx="15" cy="18" r="1"></circle></svg>';
+                dragHandle.addEventListener('dragstart', (e) => {
+                    subtaskDragState = { subtaskId: subtask.id, taskId: currentEditingTask.id };
+                    item.classList.add('subtask-dragging');
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.setData('text/plain', subtask.id);
+                });
+                dragHandle.addEventListener('dragend', () => {
+                    item.classList.remove('subtask-dragging');
+                    subtaskDragState = null;
+                });
                 
                 const checkbox = document.createElement('div');
                 checkbox.className = 'subtask-checkbox' + (subtask.completed ? ' completed' : '');
@@ -3716,6 +4317,7 @@
                     subtask.completed = !subtask.completed;
                     saveState();
                     renderSubtasks();
+                    refreshTaskCard(currentEditingTask);
                 });
 
                 const textEl = document.createElement('div');
@@ -3727,6 +4329,7 @@
                     e.stopPropagation();
                     const input = document.createElement('textarea');
                     input.className = 'task-text-input';
+                    input.setAttribute('aria-label', 'Editar subtarefa');
                     input.value = subtask.text;
                     input.rows = 1;
                     
@@ -3738,17 +4341,17 @@
 
                     textEl.replaceWith(input);
                     input.focus();
-                    input.setSelectionRange(input.value.length, input.value.length);
+                    input.setSelectionRange(0, input.value.length);
                     adjustHeight();
 
                     const finish = () => {
                         const val = input.value.trim();
-                        if (val) {
+                        if (val && val !== subtask.text) {
                             subtask.text = val;
                             saveState();
                         }
                         renderSubtasks();
-                        renderAll();
+                        refreshTaskCard(currentEditingTask);
                     };
 
                     input.addEventListener('blur', finish);
@@ -3773,7 +4376,8 @@
                     state.inbox.unshift(newTask);
                     saveState();
                     renderSubtasks();
-                    renderAll();
+                    refreshTaskCard(currentEditingTask);
+                    refreshTaskContainerState({ type: 'inbox', blockId: null }, { animateNew: true });
                 });
 
                 const delBtn = document.createElement('button');
@@ -3785,17 +4389,51 @@
                     currentEditingTask.subtasks.splice(index, 1);
                     saveState();
                     renderSubtasks();
+                    refreshTaskCard(currentEditingTask);
                 });
 
                 actions.appendChild(promoteBtn);
                 actions.appendChild(delBtn);
 
+                item.appendChild(dragHandle);
                 item.appendChild(checkbox);
                 item.appendChild(textEl);
                 item.appendChild(actions);
                 subtaskListEl.appendChild(item);
             });
         }
+
+        function getSubtaskDragAfterElement(container, y) {
+            return [...container.querySelectorAll('.subtask-item:not(.subtask-dragging)')].reduce((closest, item) => {
+                const box = item.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+                return offset < 0 && offset > closest.offset ? { offset, element: item } : closest;
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+
+        subtaskListEl.addEventListener('dragover', (e) => {
+            if (!subtaskDragState || subtaskDragState.taskId !== currentEditingTask?.id) return;
+            e.preventDefault();
+            const draggingItem = subtaskListEl.querySelector('.subtask-dragging');
+            const afterElement = getSubtaskDragAfterElement(subtaskListEl, e.clientY);
+            if (draggingItem && afterElement !== draggingItem) {
+                subtaskListEl.insertBefore(draggingItem, afterElement || null);
+            }
+        });
+
+        subtaskListEl.addEventListener('drop', (e) => {
+            if (!subtaskDragState || subtaskDragState.taskId !== currentEditingTask?.id) return;
+            e.preventDefault();
+            const subtasksById = new Map(currentEditingTask.subtasks.map(subtask => [subtask.id, subtask]));
+            const reorderedSubtasks = [...subtaskListEl.querySelectorAll('.subtask-item')]
+                .map(item => subtasksById.get(item.dataset.subtaskId))
+                .filter(Boolean);
+            const orderChanged = reorderedSubtasks.some((subtask, index) => subtask.id !== currentEditingTask.subtasks[index]?.id);
+            if (orderChanged) {
+                currentEditingTask.subtasks = reorderedSubtasks;
+                saveState();
+            }
+        });
 
         subtaskInputEl.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && currentEditingTask) {
@@ -3810,6 +4448,7 @@
                     });
                     saveState();
                     renderSubtasks();
+                    refreshTaskCard(currentEditingTask);
                     subtaskInputEl.value = '';
                 }
             }
@@ -3829,6 +4468,8 @@
                 // Initialize with default blocks
                 state.blocks = DEFAULT_BLOCKS;
             }
+            normalizeFilterOrders(state);
+            applyFilterOrders();
 
             // Update nextColorIndex based on existing blocks
             if (state.blocks.length > 0) {
@@ -3841,14 +4482,11 @@
                 searchInput.value = state.searchQuery || '';
                 searchInput.addEventListener('input', (e) => {
                     state.searchQuery = e.target.value;
-                    renderAll();
-                    // Retain focus correctly
-                    const el = document.getElementById('search-input');
-                    if (el) el.focus();
+                    refreshTaskVisibility();
                 });
             }
 
-            renderAll();
+            renderInitialView();
             inboxInput.focus();
         }
 

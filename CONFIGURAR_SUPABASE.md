@@ -44,3 +44,14 @@ Quando **Confirm email** estiver habilitado, uma conta nova só poderá entrar d
 5. No Supabase, abra **Table Editor > focus_user_states**. Uma linha deve aparecer para o usuário.
 
 O Focus continuará mantendo uma cópia no navegador e também salvará tarefas, blocos, subtarefas e a sessão do modo foco no Supabase.
+
+## 5. Habilitar a exclusão de conta
+
+A opção **Excluir conta** só funciona depois de executar a versão atual do arquivo `supabase.sql` no **SQL Editor**. O script cria `public.delete_own_account()`, que não recebe um ID e usa apenas o usuário autenticado pelo token atual.
+
+1. Abra **SQL Editor** no projeto Supabase.
+2. Copie e execute o conteúdo atual de `supabase.sql`.
+3. Confirme que o resultado foi **Success. No rows returned**.
+4. No Focus, abra o perfil, escolha **Excluir conta** e digite a frase solicitada.
+
+Essa ação é irreversível: remove o avatar, os estados do Focus e o usuário autenticado. Use **Baixar dados** antes, caso queira guardar uma cópia.
