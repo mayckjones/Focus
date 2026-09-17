@@ -1412,6 +1412,7 @@ document.getElementById('filter-bar').addEventListener('click', (e) => {
     if (weekdayToggle) {
         const weekdayFilter = document.getElementById('weekday-filter');
         const isOpen = weekdayFilter.classList.toggle('open');
+        document.body.classList.toggle('weekday-menu-open', isOpen);
         weekdayToggle.setAttribute('aria-expanded', String(isOpen));
         return;
     }
@@ -1421,12 +1422,14 @@ document.getElementById('filter-bar').addEventListener('click', (e) => {
     saveState();
     refreshTaskVisibility();
     document.getElementById('weekday-filter').classList.remove('open');
+    document.body.classList.remove('weekday-menu-open');
     document.getElementById('weekday-filter-toggle').setAttribute('aria-expanded', 'false');
 });
 
 document.addEventListener('click', (e) => {
     if (!e.target.closest('#weekday-filter')) {
         document.getElementById('weekday-filter').classList.remove('open');
+        document.body.classList.remove('weekday-menu-open');
         document.getElementById('weekday-filter-toggle').setAttribute('aria-expanded', 'false');
     }
 });

@@ -2157,8 +2157,13 @@ textarea:focus-visible {
         -webkit-overflow-scrolling: touch;
     }
 
+    body.weekday-menu-open .filter-bar,
     .filter-bar:has(.weekday-filter.open) {
         z-index: 1200;
+    }
+
+    body.weekday-menu-open .header {
+        z-index: 1199;
     }
 
     .filter-bar > * {
