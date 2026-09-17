@@ -46,6 +46,7 @@ function normalizeFilterOrders(source) {
 
 let dragData = null; // { taskId, sourceType: 'inbox'|'block', sourceBlockId? }
 let pendingDrop = null;
+const collapsedCompletedSections = new Set();
 
 function previewDrop(container, before, indicator, after = false) {
     document.querySelectorAll('.drop-before, .drop-after').forEach(el => el.classList.remove('drop-before', 'drop-after'));
@@ -161,7 +162,7 @@ function normalizeOrganizerTaskImportance() {
 }
 
 function getDragAfterElement(container, y) {
-    const draggableElements = [...container.querySelectorAll('.task-card:not(.dragging):not(.hidden-by-filter)')];
+    const draggableElements = [...container.querySelectorAll(':scope > .task-card:not(.dragging):not(.hidden-by-filter)')];
     
     return draggableElements.reduce((closest, child) => {
         const box = child.getBoundingClientRect();
@@ -420,9 +421,10 @@ function renderTaskCard(task, options = {}) {
     checkbox.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
     checkbox.addEventListener('click', (e) => {
         e.stopPropagation();
+        const location = findTaskLocation(task.id);
         task.completed = !task.completed;
         saveState();
-        card.classList.toggle('completed', task.completed);
+        refreshTaskContainerState(location);
     });
 
     // Content
@@ -596,6 +598,63 @@ function renderTaskCard(task, options = {}) {
     });
 
     return card;
+}
+
+function getTaskLocationKey(location) {
+    return location?.type === 'block' ? `block:${location.blockId}` : 'inbox';
+}
+
+function renderTaskCollection(container, tasks, location, options = {}) {
+    const existingIds = new Set(
+        [...container.querySelectorAll('.task-card')].map(card => card.dataset.taskId)
+    );
+    const pendingTasks = tasks.filter(task => !task.completed);
+    const completedTasks = tasks.filter(task => task.completed);
+
+    container.replaceChildren();
+
+    pendingTasks.forEach(task => {
+        container.appendChild(renderTaskCard(task, {
+            animateEntry: options.animateNew && !existingIds.has(task.id)
+        }));
+    });
+
+    if (tasks.length === 0) appendEmptyTaskState(container, location);
+
+    if (completedTasks.length > 0) {
+        const locationKey = getTaskLocationKey(location);
+        const isCollapsed = collapsedCompletedSections.has(locationKey);
+        const section = document.createElement('div');
+        section.className = 'completed-tasks-section';
+        section.dataset.locationKey = locationKey;
+
+        const toggle = document.createElement('button');
+        toggle.type = 'button';
+        toggle.className = 'completed-tasks-toggle';
+        toggle.setAttribute('aria-expanded', String(!isCollapsed));
+        toggle.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg><span>Conclu\u00edda</span><span class="completed-tasks-count"></span>';
+
+        const list = document.createElement('div');
+        list.className = 'completed-tasks-list';
+        list.hidden = isCollapsed;
+
+        completedTasks.forEach(task => {
+            list.appendChild(renderTaskCard(task, {
+                animateEntry: options.animateNew && !existingIds.has(task.id)
+            }));
+        });
+
+        toggle.addEventListener('click', () => {
+            const collapsed = toggle.getAttribute('aria-expanded') === 'true';
+            toggle.setAttribute('aria-expanded', String(!collapsed));
+            list.hidden = collapsed;
+            if (collapsed) collapsedCompletedSections.add(locationKey);
+            else collapsedCompletedSections.delete(locationKey);
+        });
+
+        section.append(toggle, list);
+        container.appendChild(section);
+    }
 }
 
 function startEditTask(task, textEl, card) {
@@ -959,17 +1018,7 @@ function renderBlock(block, options = {}) {
     // Tasks area
     const tasksArea = document.createElement('div');
     tasksArea.className = 'block-tasks';
-
-    if (block.tasks.length === 0) {
-        const empty = document.createElement('div');
-        empty.className = 'block-empty';
-        empty.textContent = 'Arraste tarefas aqui';
-        tasksArea.appendChild(empty);
-    } else {
-        block.tasks.forEach(task => {
-            tasksArea.appendChild(renderTaskCard(task));
-        });
-    }
+    renderTaskCollection(tasksArea, block.tasks, { type: 'block', blockId: block.id });
 
     // Footer with focus button and quick add input
     const footer = document.createElement('div');
@@ -1178,21 +1227,7 @@ function refreshTaskContainerState(location, options = {}) {
     if (!container) return;
 
     const tasks = getTasksForLocation(location);
-    const desiredIds = new Set(tasks.map(task => task.id));
-    container.querySelectorAll('.block-empty, .inbox-empty').forEach(empty => empty.remove());
-    container.querySelectorAll('.task-card').forEach(card => {
-        if (!desiredIds.has(card.dataset.taskId)) card.remove();
-    });
-
-    tasks.forEach((task, index) => {
-        let card = container.querySelector(`.task-card[data-task-id="${task.id}"]`);
-        if (!card) card = renderTaskCard(task, { animateEntry: options.animateNew });
-        const cards = container.querySelectorAll('.task-card');
-        const cardAtIndex = cards[index];
-        if (cardAtIndex !== card) container.insertBefore(card, cardAtIndex || null);
-    });
-
-    if (tasks.length === 0) appendEmptyTaskState(container, location);
+    renderTaskCollection(container, tasks, location, options);
     refreshTaskVisibility();
 }
 
@@ -1236,6 +1271,12 @@ function refreshTaskVisibility() {
     });
 
     document.getElementById('inbox-count').textContent = state.inbox.length;
+    document.querySelectorAll('.completed-tasks-section').forEach(section => {
+        const visibleCount = section.querySelectorAll('.task-card:not(.hidden-by-filter)').length;
+        const count = section.querySelector('.completed-tasks-count');
+        if (count) count.textContent = visibleCount;
+        section.hidden = visibleCount === 0;
+    });
     document.querySelectorAll('.filter-chip').forEach(chip => {
         chip.classList.toggle('active', chip.dataset.filter === state.activeFilter);
     });
@@ -1291,16 +1332,7 @@ function renderInitialView() {
     const inboxTasks = document.getElementById('inbox-tasks');
     inboxTasks.innerHTML = '';
 
-    if (state.inbox.length === 0) {
-        const empty = document.createElement('div');
-        empty.className = 'inbox-empty';
-        empty.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg><span>Nenhuma tarefa no inbox.<br>Digite acima para adicionar.</span>';
-        inboxTasks.appendChild(empty);
-    } else {
-        state.inbox.forEach(task => {
-            inboxTasks.appendChild(renderTaskCard(task));
-        });
-    }
+    renderTaskCollection(inboxTasks, state.inbox, { type: 'inbox', blockId: null });
 
     // Update inbox count
     document.getElementById('inbox-count').textContent = state.inbox.length;
@@ -1309,6 +1341,7 @@ function renderInitialView() {
     document.querySelectorAll('.filter-chip').forEach(chip => {
         chip.classList.toggle('active', chip.dataset.filter === state.activeFilter);
     });
+    refreshTaskVisibility();
     updateWeekdayFilterLabel();
 }
 
