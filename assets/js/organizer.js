@@ -33,6 +33,7 @@ let state = {
     searchQuery: '',
     filterOrder: [],
     weekdayOrder: [],
+    collapsedCompletedSections: [],
 };
 
 const DEFAULT_FILTER_ORDER = ['all', 'important', 'atrasadas', 'hoje', 'amanha', 'weekdays', 'futuras'];
@@ -47,6 +48,20 @@ function normalizeFilterOrders(source) {
 let dragData = null; // { taskId, sourceType: 'inbox'|'block', sourceBlockId? }
 let pendingDrop = null;
 const collapsedCompletedSections = new Set();
+
+function restoreCollapsedCompletedSections(source) {
+    const savedSections = Array.isArray(source?.collapsedCompletedSections)
+        ? source.collapsedCompletedSections.filter(key => typeof key === 'string')
+        : [];
+    state.collapsedCompletedSections = [...new Set(savedSections)];
+    collapsedCompletedSections.clear();
+    state.collapsedCompletedSections.forEach(key => collapsedCompletedSections.add(key));
+}
+
+function saveCollapsedCompletedSections() {
+    state.collapsedCompletedSections = [...collapsedCompletedSections];
+    saveState();
+}
 
 function previewDrop(container, before, indicator, after = false) {
     document.querySelectorAll('.drop-before, .drop-after').forEach(el => el.classList.remove('drop-before', 'drop-after'));
@@ -269,6 +284,7 @@ async function loadState() {
                     state.blocks = localState.blocks || [];
                     state.activeFilter = localState.activeFilter || 'all';
                     state.searchQuery = localState.searchQuery || '';
+                    state.collapsedCompletedSections = localState.collapsedCompletedSections || [];
                     normalizeFilterOrders(localState);
                     normalizeOrganizerTaskImportance();
                     window.FocusCloud?.showStatus(
@@ -283,6 +299,7 @@ async function loadState() {
                 state.blocks = cloudState.blocks || [];
                 state.activeFilter = cloudState.activeFilter || 'all';
                 state.searchQuery = cloudState.searchQuery || '';
+                state.collapsedCompletedSections = cloudState.collapsedCompletedSections || [];
                 normalizeFilterOrders(cloudState);
                 const normalized = normalizeOrganizerTaskImportance();
                 window.FocusCloud.writeLocalState(STORAGE_KEY, state, {
@@ -304,6 +321,7 @@ async function loadState() {
         state.blocks = localState.blocks || [];
         state.activeFilter = localState.activeFilter || 'all';
         state.searchQuery = localState.searchQuery || '';
+        state.collapsedCompletedSections = localState.collapsedCompletedSections || [];
         normalizeFilterOrders(localState);
         normalizeOrganizerTaskImportance();
         return true;
@@ -650,6 +668,7 @@ function renderTaskCollection(container, tasks, location, options = {}) {
             list.hidden = collapsed;
             if (collapsed) collapsedCompletedSections.add(locationKey);
             else collapsedCompletedSections.delete(locationKey);
+            saveCollapsedCompletedSections();
         });
 
         section.append(toggle, list);
@@ -2211,6 +2230,7 @@ async function init() {
         state.blocks = DEFAULT_BLOCKS;
     }
     normalizeFilterOrders(state);
+    restoreCollapsedCompletedSections(state);
     applyFilterOrders();
 
     // Update nextColorIndex based on existing blocks
