@@ -6,13 +6,13 @@ const FOCUS_HANDOFF_KEY = 'focusAppState';
 
 const DAY_CONFIG = {
     hoje:    { label: 'Hoje',    color: 'var(--day-hoje)',  bg: 'rgba(0,120,212,0.12)' },
-    amanha:  { label: 'AmanhÃ£',  color: 'var(--day-ter)',   bg: 'rgba(230,126,34,0.12)' },
+    amanha:  { label: 'Amanhã',  color: 'var(--day-ter)',   bg: 'rgba(230,126,34,0.12)' },
     segunda: { label: 'Segunda', color: 'var(--day-seg)',   bg: 'rgba(52,152,219,0.12)' },
-    terca:   { label: 'TerÃ§a',   color: 'var(--day-ter)',   bg: 'rgba(230,126,34,0.12)' },
+    terca:   { label: 'Terça',   color: 'var(--day-ter)',   bg: 'rgba(230,126,34,0.12)' },
     quarta:  { label: 'Quarta',  color: 'var(--day-qua)',   bg: 'rgba(46,204,113,0.12)' },
     quinta:  { label: 'Quinta',  color: 'var(--day-qui)',   bg: 'rgba(155,89,182,0.12)' },
     sexta:   { label: 'Sexta',   color: 'var(--day-sex)',   bg: 'rgba(26,188,156,0.12)' },
-    sabado:  { label: 'SÃ¡bado',  color: 'var(--day-sab)',   bg: 'rgba(231,76,60,0.12)' },
+    sabado:  { label: 'Sábado',  color: 'var(--day-sab)',   bg: 'rgba(231,76,60,0.12)' },
     domingo: { label: 'Domingo', color: 'var(--day-dom)',   bg: 'rgba(243,156,18,0.12)' },
 };
 
@@ -772,7 +772,7 @@ function toggleDayPicker(task, card) {
             item.type = 'button';
             item.className = 'day-picker-item';
             item.setAttribute('aria-pressed', String(isActive));
-            item.innerHTML = `<span class="picker-dot" style="background:${isActive ? cfg.color : 'var(--border)'}"></span>${cfg.label}${isActive ? ' âœ“' : ''}`;
+            item.innerHTML = `<span class="picker-dot" style="background:${isActive ? cfg.color : 'var(--border)'}"></span>${cfg.label}${isActive ? ' ✓' : ''}`;
             item.addEventListener('click', (e) => {
                 e.stopPropagation();
                 setDraftDate(key, getDateForKey(key));
@@ -1306,7 +1306,7 @@ function updateWeekdayFilterLabel() {
     const toggle = document.getElementById('weekday-filter-toggle');
     const label = document.getElementById('weekday-filter-label');
     if (!toggle || !label) return;
-    const labels = { segunda: 'Segunda', terca: 'TerÃ§a', quarta: 'Quarta', quinta: 'Quinta', sexta: 'Sexta', sabado: 'SÃ¡bado', domingo: 'Domingo' };
+    const labels = { segunda: 'Segunda', terca: 'Terça', quarta: 'Quarta', quinta: 'Quinta', sexta: 'Sexta', sabado: 'Sábado', domingo: 'Domingo' };
     label.textContent = labels[state.activeFilter] ? `Dias: ${labels[state.activeFilter]}` : 'Dias da semana';
 }
 
@@ -1563,14 +1563,14 @@ function extractDayFromText(text) {
     if (!text) return null;
     const lower = text.toLowerCase();
     if (/\b(hoje|meu\s+dia)\b/.test(lower)) return 'hoje';
-    if (/\b(amanhÃ£|amanha)\b/.test(lower)) return 'amanha';
+    if (/\b(amanhã|amanha)\b/.test(lower)) return 'amanha';
     if (/\b(dom|domingo)\b/.test(lower)) return 'domingo';
     if (/\b(seg|segunda(-feira)?)\b/.test(lower)) return 'segunda';
-    if (/\b(ter|terÃ§a|terca(-feira)?)\b/.test(lower)) return 'terca';
+    if (/\b(ter|terça|terca(-feira)?)\b/.test(lower)) return 'terca';
     if (/\b(qua|quarta(-feira)?)\b/.test(lower)) return 'quarta';
     if (/\b(qui|quinta(-feira)?)\b/.test(lower)) return 'quinta';
     if (/\b(sex|sexta(-feira)?)\b/.test(lower)) return 'sexta';
-    if (/\b(sÃ¡b|sab|sÃ¡bado|sabado)\b/.test(lower)) return 'sabado';
+    if (/\b(sáb|sab|sábado|sabado)\b/.test(lower)) return 'sabado';
     return null;
 }
 
@@ -1662,7 +1662,7 @@ function extractToDoPdfPageLines(items, page, pageHeight) {
         });
         text = text.trim();
         if (!text) return [];
-        const isHeader = row.y > pageHeight * 0.88 && (/^tarefas\b/i.test(text) || /\d{1,2}\s+de\s+[a-zÃ§]+\s+de\s+\d{4}/i.test(text));
+        const isHeader = row.y > pageHeight * 0.88 && (/^tarefas\b/i.test(text) || /\d{1,2}\s+de\s+[a-zç]+\s+de\s+\d{4}/i.test(text));
         const isFooter = row.y < pageHeight * 0.09 || /Impressa com o Microsoft To Do/i.test(text);
         if (isHeader || isFooter) return [];
         const startsSubtask = subtaskStartRows.has(row);
