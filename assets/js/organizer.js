@@ -453,6 +453,9 @@ async function loadState() {
                             : 'AlteraÃ§Ãµes locais mais recentes foram preservadas',
                         'warning'
                     );
+                    // Mantém a cópia local protegida e tenta sincronizá-la com a nuvem.
+                    // O salvamento usa controle otimista de conflito no Supabase.
+                    window.FocusCloud?.scheduleOrganizerSave(state);
                     return true;
                 }
                 state.inbox = cloudState.inbox || [];

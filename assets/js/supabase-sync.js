@@ -132,12 +132,11 @@
         badge.dataset.type = type || 'info';
         badge.hidden = false;
 
-        if (type === 'success') {
-            window.clearTimeout(showCloudStatus.timer);
-            showCloudStatus.timer = window.setTimeout(() => {
-                badge.hidden = true;
-            }, 2200);
-        }
+        window.clearTimeout(showCloudStatus.timer);
+        const hideAfter = type === 'success' ? 2200 : type === 'warning' ? 8000 : 10000;
+        showCloudStatus.timer = window.setTimeout(() => {
+            badge.hidden = true;
+        }, hideAfter);
     }
 
     async function getUser() {
