@@ -16,7 +16,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <link rel="stylesheet" href="assets/css/organizer.css?v=20260917-completed2">
+    <link rel="stylesheet" href="assets/css/organizer.css?v=20260918-block-swap">
 </head>
 <body>
 
@@ -46,9 +46,9 @@
         <button class="filter-chip organize-filters-btn" id="btn-organize-filters" type="button" title="Organizar filtros" aria-label="Organizar filtros"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg></button>
         <button class="filter-chip filter-orderable active" data-filter="all" data-order-id="all">Todos</button>
         <button class="filter-chip filter-orderable" data-filter="important" data-order-id="important" title="Tarefas importantes"><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.1 8.3 22 9.3 17 14.2 18.2 21.1 12 17.8 5.8 21.1 7 14.2 2 9.3 8.9 8.3 12 2"></polygon></svg>Importantes</button>
-        <button class="filter-chip filter-orderable" data-filter="atrasadas" data-order-id="atrasadas"><span class="chip-dot" style="background:var(--block-urgent)"></span>Atrasadas</button>
-        <button class="filter-chip filter-orderable" data-filter="hoje" data-order-id="hoje"><span class="chip-dot" style="background:var(--day-hoje)"></span>Hoje</button>
-        <button class="filter-chip filter-orderable" data-filter="amanha" data-order-id="amanha"><span class="chip-dot" style="background:var(--day-ter)"></span>Amanhã</button>
+        <button class="filter-chip filter-orderable" data-filter="atrasadas" data-order-id="atrasadas"><span class="chip-dot" style="background:var(--status-overdue)"></span>Atrasadas</button>
+        <button class="filter-chip filter-orderable" data-filter="hoje" data-order-id="hoje"><span class="chip-dot" style="background:var(--status-today)"></span>Hoje</button>
+        <button class="filter-chip filter-orderable" data-filter="amanha" data-order-id="amanha"><span class="chip-dot" style="background:var(--status-tomorrow)"></span>Amanhã</button>
         <div class="weekday-filter filter-orderable" id="weekday-filter" data-order-id="weekdays">
             <button class="filter-chip weekday-filter-toggle" id="weekday-filter-toggle" type="button" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"></rect><line x1="8" y1="2" x2="8" y2="6"></line><line x1="16" y1="2" x2="16" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg><span id="weekday-filter-label">Dias da semana</span></button>
             <div class="weekday-filter-menu" id="weekday-filter-menu" role="menu" aria-label="Filtrar por dia da semana">
@@ -225,6 +225,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0"></script>
     <script src="assets/js/supabase-config.js"></script>
     <script src="assets/js/supabase-sync.js"></script>
-    <script src="assets/js/organizer.js?v=20260917-calendar"></script>
+    <script src="assets/js/organizer.js?v=20260918-block-wheel-speed3"></script>
 </body>
 </html>

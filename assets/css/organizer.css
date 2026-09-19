@@ -54,15 +54,19 @@
     --block-indigo-bg: rgba(108,92,231,0.08);
     --block-indigo-border: rgba(108,92,231,0.25);
 
-    /* Day Chips */
-    --day-seg: #3498DB;
-    --day-ter: #E67E22;
-    --day-qua: #2ECC71;
-    --day-qui: #9B59B6;
-    --day-sex: #1ABC9C;
-    --day-sab: #E74C3C;
-    --day-dom: #F39C12;
-    --day-hoje: #0078D4;
+    /* Date status: reserved colors, separate from the days of the week */
+    --status-overdue: #E74C3C;
+    --status-today: #2563EB;
+    --status-tomorrow: #F97316;
+
+    /* Days of the week */
+    --day-seg: #14B8A6;
+    --day-ter: #8B5CF6;
+    --day-qua: #22C55E;
+    --day-qui: #DB2777;
+    --day-sex: #0EA5E9;
+    --day-sab: #A16207;
+    --day-dom: #84CC16;
 
     /* Misc */
     --radius: 12px;
@@ -492,6 +496,13 @@ body {
     opacity: 0.55;
     transform: scale(0.995);
     box-shadow: var(--shadow-lg);
+}
+
+.block-card.block-swap-target {
+    outline: 3px solid var(--primary);
+    outline-offset: -4px;
+    background: var(--primary-light);
+    box-shadow: var(--shadow-glow);
 }
 
 .block-card.block-entering {

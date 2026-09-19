@@ -3,17 +3,26 @@
 // ===========================
 const STORAGE_KEY = 'focusOrganizerState';
 const FOCUS_HANDOFF_KEY = 'focusAppState';
+// Apenas a faixa central da tarefa aceita a conversão em subtarefa. As bordas
+// continuam livres para facilitar a reordenação por arrastar e soltar.
+const SUBTASK_DROP_ZONE_RATIO = 0.20;
+const BLOCK_DRAG_SCROLL_EDGE = 120;
+const BLOCK_DRAG_SCROLL_MAX_SPEED_UP = 24;
+const BLOCK_DRAG_SCROLL_MAX_SPEED_DOWN = 42;
+const BLOCK_DROP_DIRECTIONAL_THRESHOLD = 0.35;
+const BLOCK_DRAG_WHEEL_SPEED_DOWN = 3;
+const BLOCK_DRAG_WHEEL_SPEED_UP = 3;
 
 const DAY_CONFIG = {
-    hoje:    { label: 'Hoje',    color: 'var(--day-hoje)',  bg: 'rgba(0,120,212,0.12)' },
-    amanha:  { label: 'Amanhã',  color: 'var(--day-ter)',   bg: 'rgba(230,126,34,0.12)' },
-    segunda: { label: 'Segunda', color: 'var(--day-seg)',   bg: 'rgba(52,152,219,0.12)' },
-    terca:   { label: 'Terça',   color: 'var(--day-ter)',   bg: 'rgba(230,126,34,0.12)' },
-    quarta:  { label: 'Quarta',  color: 'var(--day-qua)',   bg: 'rgba(46,204,113,0.12)' },
-    quinta:  { label: 'Quinta',  color: 'var(--day-qui)',   bg: 'rgba(155,89,182,0.12)' },
-    sexta:   { label: 'Sexta',   color: 'var(--day-sex)',   bg: 'rgba(26,188,156,0.12)' },
-    sabado:  { label: 'Sábado',  color: 'var(--day-sab)',   bg: 'rgba(231,76,60,0.12)' },
-    domingo: { label: 'Domingo', color: 'var(--day-dom)',   bg: 'rgba(243,156,18,0.12)' },
+    hoje:    { label: 'Hoje',    color: 'var(--status-today)',    bg: 'rgba(37,99,235,0.12)' },
+    amanha:  { label: 'Amanhã',  color: 'var(--status-tomorrow)', bg: 'rgba(249,115,22,0.12)' },
+    segunda: { label: 'Segunda', color: 'var(--day-seg)', bg: 'rgba(20,184,166,0.12)' },
+    terca:   { label: 'Terça',   color: 'var(--day-ter)', bg: 'rgba(139,92,246,0.12)' },
+    quarta:  { label: 'Quarta',  color: 'var(--day-qua)', bg: 'rgba(34,197,94,0.12)' },
+    quinta:  { label: 'Quinta',  color: 'var(--day-qui)', bg: 'rgba(219,39,119,0.12)' },
+    sexta:   { label: 'Sexta',   color: 'var(--day-sex)', bg: 'rgba(14,165,233,0.12)' },
+    sabado:  { label: 'Sábado',  color: 'var(--day-sab)', bg: 'rgba(161,98,7,0.12)' },
+    domingo: { label: 'Domingo', color: 'var(--day-dom)', bg: 'rgba(132,204,22,0.12)' },
 };
 
 const DEFAULT_BLOCKS = [
@@ -47,6 +56,9 @@ function normalizeFilterOrders(source) {
 
 let dragData = null; // { taskId, sourceType: 'inbox'|'block', sourceBlockId? }
 let pendingDrop = null;
+let blockDragPointer = null;
+let blockDragScrollFrame = null;
+let blockPointerDrag = null;
 const collapsedCompletedSections = new Set();
 
 function restoreCollapsedCompletedSections(source) {
@@ -65,6 +77,7 @@ function saveCollapsedCompletedSections() {
 
 function previewDrop(container, before, indicator, after = false) {
     document.querySelectorAll('.drop-before, .drop-after').forEach(el => el.classList.remove('drop-before', 'drop-after'));
+    document.querySelectorAll('.block-swap-target').forEach(el => el.classList.remove('block-swap-target'));
     pendingDrop = { container, before };
     if (indicator) indicator.classList.add(after ? 'drop-after' : 'drop-before');
 }
@@ -108,8 +121,15 @@ function commitDrop(e) {
     e.stopPropagation();
     const positions = captureLayout(dragData.blockId ? '.block-card' : '.task-card:not(.hidden-by-filter)');
     const dragging = document.querySelector(dragData.blockId ? '.dragging-block' : '.dragging');
-    const { container, before } = pendingDrop;
-    if (dragging && before !== dragging) container.insertBefore(dragging, before || null);
+    const { container, before, swapWith } = pendingDrop;
+    if (dragging && swapWith && swapWith !== dragging) {
+        const placeholder = document.createComment('block-swap');
+        container.replaceChild(placeholder, dragging);
+        container.replaceChild(dragging, swapWith);
+        container.replaceChild(swapWith, placeholder);
+    } else if (dragging && before !== dragging) {
+        container.insertBefore(dragging, before || null);
+    }
     clearAllDragOver();
     animateLayoutFrom(positions);
 }
@@ -191,15 +211,155 @@ function getDragAfterElement(container, y) {
 }
 
 function getDragDropTargetBlock(container, x, y) {
-    const draggableElements = [...container.querySelectorAll('.block-card:not(.dragging-block)')];
-    for (const child of draggableElements) {
-        const box = child.getBoundingClientRect();
-        if (x >= box.left && x <= box.right && y >= box.top && y <= box.bottom) {
-            const centerX = box.left + box.width / 2;
-            return { element: child, insertBefore: x < centerX };
+    const blocks = [...container.querySelectorAll('.block-card:not(.dragging-block)')]
+        .map(element => ({ element, box: element.getBoundingClientRect() }));
+    if (blocks.length === 0) return null;
+
+    // Agrupa os cartões pelas linhas visuais da grade. Dessa forma, os espaços
+    // entre os blocos também funcionam como áreas válidas para reposicionamento.
+    const rows = [];
+    blocks.forEach(item => {
+        let row = rows.find(candidate => Math.abs(candidate.top - item.box.top) < 24);
+        if (!row) {
+            row = { top: item.box.top, items: [] };
+            rows.push(row);
+        }
+        row.items.push(item);
+    });
+    rows.sort((a, b) => a.top - b.top);
+    rows.forEach(row => row.items.sort((a, b) => a.box.left - b.box.left));
+
+    const firstRow = rows[0];
+    const lastRow = rows[rows.length - 1];
+    const lastRowCenter = lastRow.top + Math.max(...lastRow.items.map(item => item.box.height)) / 2;
+    if (y > lastRowCenter) {
+        const lastItem = lastRow.items[lastRow.items.length - 1];
+        return { before: null, indicator: lastItem.element, after: true };
+    }
+
+    let row = firstRow;
+    for (let index = 0; index < rows.length - 1; index++) {
+        const current = rows[index];
+        const next = rows[index + 1];
+        const currentCenter = current.top + Math.max(...current.items.map(item => item.box.height)) / 2;
+        const nextCenter = next.top + Math.max(...next.items.map(item => item.box.height)) / 2;
+        if (y < (currentCenter + nextCenter) / 2) {
+            row = current;
+            break;
+        }
+        row = next;
+    }
+
+    const draggingBox = document.querySelector('.dragging-block')?.getBoundingClientRect();
+    const movingRight = draggingBox && x > draggingBox.left + draggingBox.width / 2;
+    const movingLeft = draggingBox && x < draggingBox.left + draggingBox.width / 2;
+    const threshold = movingRight
+        ? BLOCK_DROP_DIRECTIONAL_THRESHOLD
+        : movingLeft
+            ? 1 - BLOCK_DROP_DIRECTIONAL_THRESHOLD
+            : 0.5;
+    const itemBeforePointer = row.items.find(item => x < item.box.left + item.box.width * threshold);
+    if (itemBeforePointer) {
+        // Ao mover para a direita, a posição escolhida fica logo após o cartão
+        // anterior. Destacá-lo torna o destino visual óbvio, em vez de acender
+        // a borda superior do próximo cartão da grade.
+        const itemIndex = row.items.indexOf(itemBeforePointer);
+        if (movingRight && itemIndex > 0) {
+            return { before: itemBeforePointer.element, indicator: row.items[itemIndex - 1].element, after: true };
+        }
+        return { before: itemBeforePointer.element, indicator: itemBeforePointer.element, after: false };
+    }
+
+    const rowIndex = rows.indexOf(row);
+    const nextRowFirstItem = rows[rowIndex + 1]?.items[0];
+    const lastItem = row.items[row.items.length - 1];
+    return nextRowFirstItem
+        ? { before: nextRowFirstItem.element, indicator: lastItem.element, after: true }
+        : { before: null, indicator: lastItem.element, after: true };
+}
+
+function previewBlockDrop(blocksPanel, x, y) {
+    const dragging = document.querySelector('.dragging-block');
+    const swapTarget = [...blocksPanel.querySelectorAll('.block-card:not(.dragging-block)')].find(card => {
+        const box = card.getBoundingClientRect();
+        return x >= box.left && x <= box.right && y >= box.top && y <= box.bottom;
+    });
+
+    if (dragging && swapTarget) {
+        document.querySelectorAll('.drop-before, .drop-after').forEach(el => el.classList.remove('drop-before', 'drop-after'));
+        document.querySelectorAll('.block-swap-target').forEach(el => el.classList.remove('block-swap-target'));
+        swapTarget.classList.add('block-swap-target');
+        pendingDrop = { container: blocksPanel, swapWith: swapTarget };
+        return;
+    }
+
+    const target = getDragDropTargetBlock(blocksPanel, x, y);
+    if (dragging && target && target.before !== dragging) {
+        previewDrop(blocksPanel, target.before, target.indicator, target.after);
+    } else {
+        clearAllDragOver();
+    }
+}
+
+function getAutoScrollSpeed(pointer, start, end) {
+    const edge = Math.min(BLOCK_DRAG_SCROLL_EDGE, Math.max(24, (end - start) / 3));
+    if (pointer < start + edge) return -Math.ceil(BLOCK_DRAG_SCROLL_MAX_SPEED_UP * (1 - (pointer - start) / edge));
+    if (pointer > end - edge) return Math.ceil(BLOCK_DRAG_SCROLL_MAX_SPEED_DOWN * (1 - (end - pointer) / edge));
+    return 0;
+}
+
+function stopBlockDragAutoScroll() {
+    blockDragPointer = null;
+    if (blockDragScrollFrame) cancelAnimationFrame(blockDragScrollFrame);
+    blockDragScrollFrame = null;
+}
+
+function updateBlockDragAutoScroll(x, y) {
+    blockDragPointer = { x, y };
+    if (!blockDragScrollFrame) blockDragScrollFrame = requestAnimationFrame(runBlockDragAutoScroll);
+}
+
+function runBlockDragAutoScroll() {
+    blockDragScrollFrame = null;
+    if (!dragData?.blockId || !blockDragPointer) return;
+
+    const blocksPanel = document.getElementById('blocks-panel');
+    const panelBox = blocksPanel.getBoundingClientRect();
+    const { x, y } = blockDragPointer;
+    let didScrollPanel = false;
+
+    if (x >= panelBox.left && x <= panelBox.right && y >= panelBox.top && y <= panelBox.bottom) {
+        const panelSpeed = getAutoScrollSpeed(y, panelBox.top, panelBox.bottom);
+        if (panelSpeed) {
+            const previousScrollTop = blocksPanel.scrollTop;
+            blocksPanel.scrollBy({ top: panelSpeed });
+            didScrollPanel = blocksPanel.scrollTop !== previousScrollTop;
         }
     }
-    return null;
+
+    if (!didScrollPanel) {
+        const pageSpeed = getAutoScrollSpeed(y, 0, window.innerHeight);
+        if (pageSpeed) window.scrollBy({ top: pageSpeed });
+    }
+
+    previewBlockDrop(blocksPanel, x, y);
+    blockDragScrollFrame = requestAnimationFrame(runBlockDragAutoScroll);
+}
+
+function scrollBlocksWhileDragging(event) {
+    if (!dragData?.blockId) return;
+
+    const blocksPanel = document.getElementById('blocks-panel');
+    const wheelSpeed = event.deltaY > 0 ? BLOCK_DRAG_WHEEL_SPEED_DOWN : BLOCK_DRAG_WHEEL_SPEED_UP;
+    const scrollAmount = event.deltaY * wheelSpeed;
+    const previousScrollTop = blocksPanel.scrollTop;
+    blocksPanel.scrollBy({ top: scrollAmount });
+
+    // Em telas onde a rolagem pertence à página, usa a mesma roda do mouse.
+    if (blocksPanel.scrollTop === previousScrollTop) window.scrollBy({ top: scrollAmount });
+    event.preventDefault();
+
+    if (blockDragPointer) previewBlockDrop(blocksPanel, blockDragPointer.x, blockDragPointer.y);
 }
 
 function rebuildStateFromDOM() {
@@ -423,7 +583,7 @@ function taskMatchesCurrentView(task) {
 function renderTaskCard(task, options = {}) {
     const card = document.createElement('div');
     card.className = 'task-card' + (task.completed ? ' completed' : '');
-    card.setAttribute('draggable', 'true');
+    card.draggable = true;
     card.dataset.taskId = task.id;
 
     if (options.animateEntry && !prefersReducedMotion()) {
@@ -592,7 +752,9 @@ function renderTaskCard(task, options = {}) {
         if (!dragData?.taskId) return;
         const sourceTask = getTaskById(dragData.taskId);
         const box = card.getBoundingClientRect();
-        const pointerInCenter = e.clientY > box.top + box.height * 0.25 && e.clientY < box.bottom - box.height * 0.25;
+        const subtaskZoneHeight = box.height * SUBTASK_DROP_ZONE_RATIO;
+        const subtaskZoneTop = box.top + (box.height - subtaskZoneHeight) / 2;
+        const pointerInCenter = e.clientY > subtaskZoneTop && e.clientY < subtaskZoneTop + subtaskZoneHeight;
         if (!pointerInCenter) return;
         e.preventDefault();
         e.stopPropagation();
@@ -912,7 +1074,8 @@ function renderBlock(block, options = {}) {
     const card = document.createElement('div');
     card.className = 'block-card';
     card.dataset.blockId = block.id;
-    card.setAttribute('draggable', 'true');
+    // O arraste por ponteiro mantém a roda do mouse disponível durante a ação.
+    card.draggable = false;
     card.style.borderTopColor = colors.dot;
     card.style.borderTopWidth = '3px';
 
@@ -921,24 +1084,58 @@ function renderBlock(block, options = {}) {
         card.addEventListener('animationend', () => card.classList.remove('block-entering'), { once: true });
     }
 
-    card.addEventListener('dragstart', (e) => {
-        // Se o drag foi iniciado em um input ou botÃ£o, nÃ£o arrastar o bloco
-        if (e.target.closest('input, textarea, button') || card.querySelector('.task-text-input')) {
-            e.preventDefault();
-            return;
-        }
-        card.classList.add('dragging-block');
-        dragData = { blockId: block.id };
-        e.dataTransfer.effectAllowed = 'move';
-        e.dataTransfer.setData('text/plain', block.id);
+    const canStartBlockPointerDrag = (target) => (
+        target.closest('.block-title') || !target.closest(
+            'input, textarea, button, .block-color-dot, .color-picker, .task-card'
+        )
+    ) && !card.querySelector('.task-text-input');
+
+    card.addEventListener('pointerdown', (e) => {
+        if (e.button !== 0 || !canStartBlockPointerDrag(e.target)) return;
+        blockPointerDrag = {
+            blockId: block.id,
+            card,
+            pointerId: e.pointerId,
+            startX: e.clientX,
+            startY: e.clientY,
+            active: false,
+        };
+        card.setPointerCapture(e.pointerId);
     });
 
-    card.addEventListener('dragend', () => {
+    card.addEventListener('pointermove', (e) => {
+        if (!blockPointerDrag || blockPointerDrag.card !== card || blockPointerDrag.pointerId !== e.pointerId) return;
+
+        if (!blockPointerDrag.active) {
+            const distance = Math.hypot(e.clientX - blockPointerDrag.startX, e.clientY - blockPointerDrag.startY);
+            if (distance < 6) return;
+            blockPointerDrag.active = true;
+            card.classList.add('dragging-block');
+            dragData = { blockId: block.id };
+        }
+
+        e.preventDefault();
+        updateBlockDragAutoScroll(e.clientX, e.clientY);
+        previewBlockDrop(document.getElementById('blocks-panel'), e.clientX, e.clientY);
+    });
+
+    const finishBlockPointerDrag = (e, shouldCommit) => {
+        if (!blockPointerDrag || blockPointerDrag.card !== card || blockPointerDrag.pointerId !== e.pointerId) return;
+        const wasActive = blockPointerDrag.active;
+        if (card.hasPointerCapture(e.pointerId)) card.releasePointerCapture(e.pointerId);
+        blockPointerDrag = null;
+        if (!wasActive) return;
+
+        stopBlockDragAutoScroll();
+        if (shouldCommit && pendingDrop) commitDrop(e);
         card.classList.remove('dragging-block');
         dragData = null;
         clearAllDragOver();
         rebuildStateFromDOM();
-    });
+    };
+
+    card.addEventListener('pointerup', (e) => finishBlockPointerDrag(e, true));
+    card.addEventListener('pointercancel', (e) => finishBlockPointerDrag(e, false));
 
     // Header
     const header = document.createElement('div');
@@ -1333,18 +1530,15 @@ function renderInitialView() {
         if (dragData && dragData.blockId) {
             e.preventDefault();
             e.dataTransfer.dropEffect = 'move';
-            const target = getDragDropTargetBlock(blocksPanel, e.clientX, e.clientY);
-            const dragging = document.querySelector('.dragging-block');
-            if (dragging && target && target.element && target.element !== dragging) {
-                previewDrop(blocksPanel, target.insertBefore ? target.element : target.element.nextSibling,
-                    target.element, !target.insertBefore);
-            } else {
-                clearAllDragOver();
-            }
+            updateBlockDragAutoScroll(e.clientX, e.clientY);
+            previewBlockDrop(blocksPanel, e.clientX, e.clientY);
         }
     };
     blocksPanel.ondrop = (e) => {
-        if (dragData && dragData.blockId) commitDrop(e);
+        if (dragData && dragData.blockId) {
+            stopBlockDragAutoScroll();
+            commitDrop(e);
+        }
     };
 
     // Render inbox
@@ -1370,6 +1564,7 @@ function renderInitialView() {
 function clearAllDragOver() {
     document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
     document.querySelectorAll('.drop-before, .drop-after').forEach(el => el.classList.remove('drop-before', 'drop-after'));
+    document.querySelectorAll('.block-swap-target').forEach(el => el.classList.remove('block-swap-target'));
     clearTaskConversionTargets();
     pendingDrop = null;
 }
@@ -1378,6 +1573,9 @@ function clearAllDragOver() {
 // INBOX DRAG/DROP
 // ===========================
 const inboxPanel = document.getElementById('inbox-panel');
+
+// Mantém a roda do mouse disponível durante o arraste de um bloco.
+document.addEventListener('wheel', scrollBlocksWhileDragging, { passive: false });
 
 inboxPanel.addEventListener('dragover', (e) => {
     if (!dragData || !dragData.taskId) return;
